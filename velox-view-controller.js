@@ -105,7 +105,7 @@
         series(calls, callback) ;
     };
 
-    extendsEmiter = function(clazz){
+    var extendsEmiter = function(clazz){
         Object.keys(EventEmiter.prototype).forEach(function(m){
             clazz.prototype[m] = EventEmiter.prototype[m] ;
         });
