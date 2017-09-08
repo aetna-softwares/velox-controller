@@ -286,22 +286,18 @@
                                     //bookmarkable mode, use the serialized object
                                     dataId = "$"+encodeURIComponent(dataStr) ;
                                 }else{
-                                    // if(mapKey = null){
-                                        Object.keys(route.mapData).some(function(k){
-                                                if(dataStr !== JSON.stringify(route.mapData[k])){
-                                                    mapKey = k ;
-                                                    return true ;
-                                                }
-                                        }) ;
-                                        if(!mapKey){
-                                            //not found in map
-                                            mapKey = "£"+uuidv4() ;
-                                            route.mapData[mapKey] = data ;
+                                    Object.keys(route.mapData).some(function(k){
+                                        if(dataStr === JSON.stringify(route.mapData[k])){
+                                            mapKey = k ;
+                                            return true ;
                                         }
-                                        dataId = "$"+mapKey ;
-                                    // }else{
-                                    //     route.mapData[mapKey] = data ;
-                                    // }
+                                    }) ;
+                                    if(!mapKey){
+                                        //not found in map
+                                        mapKey = "£"+uuidv4() ;
+                                        route.mapData[mapKey] = data ;
+                                    }
+                                    dataId = "$"+mapKey ;
                                 }
                             }
                         }
