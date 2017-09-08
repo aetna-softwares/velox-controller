@@ -295,7 +295,7 @@
                                         }) ;
                                         if(!mapKey){
                                             //not found in map
-                                            mapKey = "$"+uuidv4() ;
+                                            mapKey = "£"+uuidv4() ;
                                             route.mapData[mapKey] = data ;
                                         }
                                         dataId = "$"+mapKey ;
@@ -421,7 +421,7 @@
                 if(r.route === routeDestName){
                     var data = r.defaultData;
                     if(dataId){
-                        if(dataId[0] === "$"){
+                        if(dataId[0] === "£"){
                             //start by $, it is an id in data map (anonymous data)
                             data = r.mapData[dataId] ;
                         }else{
