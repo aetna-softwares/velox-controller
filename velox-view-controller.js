@@ -4,7 +4,29 @@
             global.VeloxViewController = factory() ;
 }(this, (function () { 'use strict';
 
-    
+    /**
+     * Execute many function in series
+     * 
+     * @param {function(Error)[]} calls array of function to run
+     * @param {function(Error)} callback called when all calls are done
+     */
+    var series = function(calls, callback){
+        if(calls.length === 0){ return callback(); }
+        calls = calls.slice() ;
+        var doOne = function(){
+            var call = calls.shift() ;
+            call(function(err){
+                if(err){ return callback(err) ;}
+                if(calls.length === 0){
+                    callback() ;
+                }else{
+                    doOne() ;
+                }
+            }) ;
+        } ;
+        doOne() ;
+    } ;
+
     /**
      * Event emiter
      * 
