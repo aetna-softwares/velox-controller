@@ -328,7 +328,9 @@
     };
 
     VeloxFormController.prototype._toggleListAuto = function(active, callback){
-        this.view.setListAuto(active, callback);
+        if(this.view.setListAuto){
+            this.view.setListAuto(active, callback);
+        }
     };
 
 
@@ -446,6 +448,45 @@ function prepareRecord(schema, table, record){
     }) ;
 }
 
+/**
+ * Save the record on validation.
+ * 
+ * By default it use the Velox Database API to save to database. If you don't want to use this, override this to do your own save
+ * 
+ * @param {Array} recordsToSave list of records to save
+ * @param {Function} callback call this when your saving is done. first argument is error, second argument is the new record to display
+ */
+VeloxFormController.prototype.saveRecords = function(recordsToSave, callback){
+    if(!this.api || !this.api.__velox_database){
+        return callback("No Velox Database API found, provide it or implement saveRecords on your form controller") ;
+    }
+    this.api.__velox_database.transactionalChanges(recordsToSave, function(err, recordsSaved){
+        if(err){ return callback(err); }
+
+        var thisTableRecord = null;
+        recordsSaved.some(function(r){
+            if(r.table === this.table){
+                thisTableRecord = r.record ;
+                return true ;
+            }
+        }.bind(this)) ;
+
+        if(thisTableRecord){
+            if(recordsToSave.length === 1){
+                callback(null, thisTableRecord) ;
+            }else{
+                //there is some joins, reread data
+                this.searchRecord(thisTableRecord, function(err, newReadRecord){
+                    if(err){ return callback(err);}
+                    callback(null, newReadRecord) ;
+                }.bind(this)) ;
+            }
+        }else{
+            callback({err : "Can't find this table record in results", records: recordsSaved}) ;
+        }
+    }.bind(this)) ;
+} ;
+
 VeloxFormController.prototype._onBtValidate = function(){
     this.view.longTask(function(done){
         var dataBeforeModif = JSON.parse(JSON.stringify(this.view.getBoundObject())) ;
@@ -458,53 +499,41 @@ VeloxFormController.prototype._onBtValidate = function(){
             this.getRecordsToSave(viewData, dataBeforeModif, function(err, recordsToSave){
                 if(err){ return done(err) ;}
 
-                this.api.__velox_database.transactionalChanges(recordsToSave, function(err, recordsSaved){
-                    if(err){ return done(err); }
-
-                    var thisTableRecord = null;
-                    recordsSaved.some(function(r){
-                        if(r.table === this.table){
-                            thisTableRecord = r.record ;
-                            return true ;
-                        }
+                this.saveRecords(recordsToSave, function(err, savedRecord){
+                    if(err){ return done(err) ;}
+                    this._toggleListAuto(false, function(err){
+                        if(err){ return done(err) ;}
+                        this.currentRecord = savedRecord ;
+                        this.view.render(savedRecord) ;
+                        this.setMode("read") ;
+                        done() ;
                     }.bind(this)) ;
-
-                    if(thisTableRecord){
-                        if(recordsToSave.length === 1){
-                            this._toggleListAuto(false, function(err){
-                                if(err){ return done(err) ;}
-                                this.currentRecord = thisTableRecord ;
-                                this.view.render(thisTableRecord) ;
-                                this.setMode("read") ;
-                                done() ;
-                            }.bind(this)) ;
-                        }else{
-                            //there is some joins, reread data
-                            this.searchRecord(thisTableRecord, function(err, newReadRecord){
-                                if(err){ return done(err);}
-                                this._toggleListAuto(false, function(err){
-                                    if(err){ return done(err) ;}
-                                    this.currentRecord = newReadRecord ;
-                                    this.view.render(newReadRecord) ;
-                                    this.setMode("read") ;
-                                    done() ;
-                                }.bind(this)) ;
-                            }.bind(this)) ;
-                        }
-                    }else{
-                        done({err : "Can't find this table record in results", records: recordsSaved}) ;
-                    }
                 }.bind(this)) ;
             }.bind(this)) ;
         }.bind(this)) ;
     }.bind(this)) ;
 };
 
+/**
+ * Delete the record 
+ * 
+ * By default it use the Velox Database API to delete in database. If you don't want to use this, override this to do your own delete
+ * 
+ * @param {object} record the record to delete
+ * @param {Function} callback call this when your delete is done. first argument is error
+ */
+VeloxFormController.prototype.deleteRecord = function(record, callback){
+    if(!this.api || !this.api.__velox_database){
+        return callback("No Velox Database API found, provide it or implement deleteRecord on your form controller") ;
+    }
+    this.api.__velox_database[this.table].remove(record, callback) ;
+} ;
+
 VeloxFormController.prototype._onBtDelete = function(){
     this.view.confirm(this.viewOptions.labels.confirmDelete, function(yes){
         if(yes){
             this.view.longTask(function(done){
-                this.api.__velox_database[this.table].remove(this.currentRecord, function(err){
+                this.deleteRecord(this.currentRecord, function(err){
                     if(err){ return done(err); }
                     this._toggleListAuto(false, function(err){
                         if(err){ return done(err); }
@@ -563,6 +592,9 @@ VeloxFormController.prototype.refresh = function(callback){
  * @param {function} callback the callback to call when search is done
  */
 VeloxFormController.prototype.searchRecord = function(data, callback){
+    if(!this.api || !this.api.__velox_database){
+        return callback(null, data) ;
+    }
     this.api.__velox_database[this.table].getPk(data, function(err, pk){
         if(err){ return callback(err) ;}
         this.api.__velox_database[this.table].getByPk(pk, this.joinFetch, callback);

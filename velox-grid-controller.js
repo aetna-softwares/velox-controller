@@ -241,6 +241,9 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
      * @param {function} callback the callback to call when search is done
      */
     VeloxGridController.prototype.searchRecords = function(callback){
+        if(!this.api || !this.api.__velox_database){
+            return callback("No Velox Database API found, provide it or implement searchRecords on your grid controller") ;
+        }
         this.api.__velox_database.getSchema(function(err, schema){
             if(err){ return callback(err) ;}
             this.api.__velox_database[this.table].search(
