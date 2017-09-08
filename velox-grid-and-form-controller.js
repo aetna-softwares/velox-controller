@@ -79,11 +79,16 @@
         var record = ev.data ;
         
         this.viewGrid.longTask(function(done){
-            this.api.__velox_database[this.table].getPk(record, function(err, pk){
-                if(err){ return done(err) ;}
-                this.navigate( this.formRoute, pk) ;
+            if(this.api && this.api.__velox_database){
+                this.api.__velox_database[this.table].getPk(record, function(err, pk){
+                    if(err){ return done(err) ;}
+                    this.navigate( this.formRoute, pk) ;
+                    done() ;
+                }.bind(this)) ;
+            }else{
+                this.navigate(this.formRoute, record) ;
                 done() ;
-            }.bind(this)) ;
+            }
         }.bind(this)) ;
     } ;
 
