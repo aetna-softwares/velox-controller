@@ -280,13 +280,13 @@
                     var mapKey = null;
                     this.routes.forEach(function(route){
                         if(route.route === routeDestination.route){
-                        if(dataStr !== JSON.stringify(route.defaultData)){
-                            //given data is different from default data
-                            if(dataMode === "bookmarkable"){
-                                //bookmarkable mode, use the serialized object
-                                dataId = "$"+encodeURIComponent(dataStr) ;
-                            }else{
-                                    if(mapKey = null){
+                            if(dataStr !== JSON.stringify(route.defaultData)){
+                                //given data is different from default data
+                                if(dataMode === "bookmarkable"){
+                                    //bookmarkable mode, use the serialized object
+                                    dataId = "$"+encodeURIComponent(dataStr) ;
+                                }else{
+                                    // if(mapKey = null){
                                         Object.keys(route.mapData).some(function(k){
                                                 if(dataStr !== JSON.stringify(route.mapData[k])){
                                                     mapKey = k ;
@@ -299,11 +299,11 @@
                                             route.mapData[mapKey] = data ;
                                         }
                                         dataId = "$"+mapKey ;
-                                    }else{
-                                        route.mapData[mapKey] = data ;
-                                    }
+                                    // }else{
+                                    //     route.mapData[mapKey] = data ;
+                                    // }
+                                }
                             }
-                        }
                         }
                     }.bind(this)) ;
                     routeAddr += dataId ;
