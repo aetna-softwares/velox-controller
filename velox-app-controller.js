@@ -71,8 +71,8 @@
 
         this.controllers.push(controller) ;
 
-        controller.navigate = function(destination, data){
-            this.navigate(destination, data) ;
+        controller.navigate = function(destination, data, dataMode){
+            this.navigate(destination, data, dataMode) ;
         }.bind(this) ;
         controller.resumeNavigation = function(){
             this.resumeNavigation() ;
