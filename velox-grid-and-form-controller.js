@@ -99,36 +99,36 @@
             }.bind(this)) ;
             gridEl.addEventListener("add", function(){
                 this.viewGrid.emit("addRecord") ;
-        }.bind(this)) ;
-    }
-} ;
-
-
-/**
- * Create new subclass of VeloxGridAndFormController
- * 
- * @example
- * var MyController = VeloxGridAndFormController.create({
- *  directory : "views/myView",
- *  name: "myView", //load view/myView/myView.html / .css
- * }) ;
- * 
- * MyController.prototype.onValidate = function(ev){
- *      //do something on validate event
- * };
- * 
- * @param {object} viewOptions the view options
- * @param {object} [data] the data to link
- */
-VeloxGridAndFormController.create = function(table, viewGridOptions, viewFormOptions){
-    var construct = function(){
-        VeloxGridAndFormController.call(this, table, viewGridOptions, viewFormOptions) ;
+            }.bind(this)) ;
+        }
     } ;
-    construct.prototype = Object.create(VeloxGridAndFormController.prototype);
-    construct.prototype.constructor = construct;
-    return construct ;
-} ;
 
 
-module.exports = VeloxGridAndFormController ;
+    /**
+     * Create new subclass of VeloxGridAndFormController
+     * 
+     * @example
+     * var MyController = VeloxGridAndFormController.create({
+     *  directory : "views/myView",
+     *  name: "myView", //load view/myView/myView.html / .css
+     * }) ;
+     * 
+     * MyController.prototype.onValidate = function(ev){
+     *      //do something on validate event
+     * };
+     * 
+     * @param {object} viewOptions the view options
+     * @param {object} [data] the data to link
+     */
+    VeloxGridAndFormController.create = function(table, viewGridOptions, viewFormOptions){
+        var construct = function(){
+            VeloxGridAndFormController.call(this, table, viewGridOptions, viewFormOptions) ;
+        } ;
+        construct.prototype = Object.create(VeloxGridAndFormController.prototype);
+        construct.prototype.constructor = construct;
+        return construct ;
+    } ;
+
+
+    return VeloxGridAndFormController ;
 })));
