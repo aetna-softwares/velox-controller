@@ -86,7 +86,7 @@
                     done() ;
                 }.bind(this)) ;
             }else{
-                this.navigate(this.formRoute, record) ;
+                this.navigate(this.formRoute, record, "anonymous") ;
                 done() ;
             }
         }.bind(this)) ;
