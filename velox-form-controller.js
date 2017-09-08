@@ -330,6 +330,8 @@
     VeloxFormController.prototype._toggleListAuto = function(active, callback){
         if(this.view.setListAuto){
             this.view.setListAuto(active, callback);
+        }else{
+            callback() ;
         }
     };
 
