@@ -273,7 +273,7 @@
             }
             // if(typeof(routeDestination.route) === "string"){
                 //move to an existing route
-                var routeAddr = routeDestination.route?"#"+routeDestination.route:"" ;
+                var routeAddr = routeDestination.route?"#!"+routeDestination.route:"" ;
                 if(routeDestination.data){
                     var dataId = "" ;
                     var dataStr = JSON.stringify(data) ;
@@ -411,7 +411,7 @@
         var foundRoutes = [];
         destinationRoutes.forEach(function(r){
             var routeAndDataId = r.split("$") ;
-            var routeDestName = routeAndDataId[0] ;
+            var routeDestName = routeAndDataId[0].replace(/^!/, "") ;
             var dataId = routeAndDataId[1] ;
             this.routes.forEach(function(r){
                 if(r.route === routeDestName){
