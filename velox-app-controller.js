@@ -338,7 +338,7 @@
      * 
      */
     VeloxAppController.prototype.suspendNavigation = function(routeName, listeners, data){
-        this.suspendedRoute = "/"+this.currentRoute ;
+        this.suspendedRoute = this.currentRoute ?"/"+this.currentRoute:null ;
         var route = null;
         if(typeof(routeName) === "string" && arguments.length < 3 && (!listeners || listeners.enter === "null")){
             //activate an existing route
