@@ -523,19 +523,19 @@
     
         this.currentRoute = currentPosition ;
         this._removeOldRoutes(removedRoutes, function(err){
-            if(err){ throw "Error while leaving routes "+JSON.stringify(err) ;}
+            if(err){ throw "Error while leaving routes "+(err instanceof Error ?err.stack:JSON.stringify(err)) ;}
 
             this._checkActiveRoutes(newRoutes, interc, currentPosition, function(err){
-                if(err){ throw "Error while checking routes "+JSON.stringify(err) ;}
+                if(err){ throw "Error while checking routes "+(err instanceof Error ?err.stack:JSON.stringify(err)) ;}
 
                 this._openNewRoutes(addedRoutes, currentPosition, function(err){
-                    if(err){ throw "Error while opening routes "+JSON.stringify(err) ;}
+                    if(err){ throw "Error while opening routes "+(err instanceof Error ?err.stack:JSON.stringify(err)) ;}
 
                     this._stackRoutes(stackedRoutes, function(err){
-                        if(err){ throw "Error while stack routes "+JSON.stringify(err) ;}
+                        if(err){ throw "Error while stack routes "+(err instanceof Error ?err.stack:JSON.stringify(err)) ;}
 
                         this._unstackRoutes(unstackedRoutes, function(err){
-                            if(err){ throw "Error while unstack routes "+JSON.stringify(err) ;}
+                            if(err){ throw "Error while unstack routes "+(err instanceof Error ?err.stack:JSON.stringify(err)) ;}
 
                             
                         }.bind(this)) ;
