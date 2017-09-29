@@ -422,7 +422,10 @@
                             data = r.mapData[dataId] ;
                         }else{
                             //it is urlEncoded data
-                            data = JSON.parse(decodeURIComponent(dataId)) ;
+                            var data = decodeURIComponent(dataId);
+                            if(data.length > 0 && ['"', '[', '{'].indexOf(data[0]) !== -1){
+                                data = JSON.parse(data) ;
+                            }
                         }
                     }
 
@@ -657,7 +660,7 @@
         }.bind(this) ;
 
 
-        this._runInterceptor(interceptors.slice(), currentPosition, route.data, function(){
+        this._runInterceptor(interceptors.slice(), currentPosition, route, function(){
             next() ;
         }.bind(this)) ;
     } ;
@@ -700,17 +703,17 @@
      * 
      * @private
      */
-    VeloxAppController.prototype._runInterceptor = function(interceptors, currentPosition, data, callback){
+    VeloxAppController.prototype._runInterceptor = function(interceptors, currentPosition, route, callback){
         if(interceptors.length === 0){
             return callback() ;//finished
         }
         var inter = interceptors.shift() ;
 
         var next = function next(){
-            this._runInterceptor(interceptors, currentPosition, data, callback) ;
+            this._runInterceptor(interceptors, currentPosition, route, callback) ;
         }.bind(this) ;
 
-        var args = [currentPosition, data, next] ;
+        var args = [currentPosition, route, next] ;
         if(inter.listener.length === 2){
             args = [currentPosition, next] ;
         }else if(inter.listener.length === 1){
