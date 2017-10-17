@@ -83,6 +83,11 @@
         controller.registerController = function(controller){
             return this.registerController(controller) ;
         }.bind(this) ;
+        controller.getRoutes = function(){
+            return this._getRoutes(this._currentPosition()) ;
+        }.bind(this) ;
+
+        
 
         this.injections.forEach(function(inj){
             controller[inj.name] = inj.object ;
