@@ -320,9 +320,9 @@
     /**
      * show the view (add to the DOM)
      */
-    VeloxViewController.prototype.unstack = function(){
+    VeloxViewController.prototype.unstack = function(data){
         this.emit("beforeUnstack") ;
-        this.refresh(function(){
+        this.refresh(data, function(){
             this.view.show();
         }.bind(this)) ;
         this.emit("unstack") ;

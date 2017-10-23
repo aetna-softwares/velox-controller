@@ -573,12 +573,7 @@
         if(route.def.active){
             route.def.active = false ;
             if(route.listenerLeave){
-                if(route.listenerLeave.length===1){
-                    route.listenerLeave(next) ;
-                }else{
-                    route.listenerLeave() ;
-                    next() ;
-                }
+                this._callListener(route, "listenerLeave", next) ;
             }else{
                 next() ;
             }
@@ -606,12 +601,7 @@
 
         if(route.def.active){
             if(route.listenerStack){
-                if(route.listenerStack.length===1){
-                    route.listenerStack(next) ;
-                }else{
-                    route.listenerStack() ;
-                    next() ;
-                }
+                this._callListener(route, "listenerStack", next) ;
             }else{
                 next() ;
             }
@@ -637,12 +627,7 @@
 
         if(route.def.active){
             if(route.listenerUnstack){
-                if(route.listenerUnstack.length===1){
-                    route.listenerUnstack(next) ;
-                }else{
-                    route.listenerUnstack() ;
-                    next() ;
-                }
+                this._callListener(route, "listenerUnstack", next) ;
             }else{
                 next() ;
             }
@@ -685,21 +670,25 @@
         }.bind(this) ;
 
         route.def.active = true ;
-        if(route.listenerEnter.length===2){
-            var openFinished = false ;
-            var checkOpenFinished = setTimeout(function(){
-                if(!openFinished){
-                    console.error("Opening route take more than 5sec, either you forgot a callback or there is some performance improvement to do", route) ;
+        this._callListener(route, "listenerEnter", next) ;
+    } ;
+
+    VeloxAppController.prototype._callListener = function(route, listenerName, callback){
+        if(route[listenerName].length===2){
+            var callFinished = false ;
+            var checkCallFinished = setTimeout(function(){
+                if(!callFinished){
+                    console.error("Calling listener "+listenerName+" take more than 5sec, either you forgot a callback or there is some performance improvement to do", route) ;
                 }
             }, 5000) ;
-            route.listenerEnter(route.data, function(err){
-                openFinished = true ;
-                clearTimeout(checkOpenFinished) ;
-                next(err) ;
+            route[listenerName](route.data, function(err){
+                callFinished = true ;
+                clearTimeout(checkCallFinished) ;
+                callback(err) ;
             }) ;
         }else{
-            route.listenerEnter(route.data) ;
-            next() ;
+            route[listenerName](route.data) ;
+            callback() ;
         }
     } ;
 
