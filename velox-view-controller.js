@@ -265,6 +265,18 @@
         }.bind(this), callback) ;
     } ;
 
+    /**
+     * modify the data should reopen the view with new data
+     */
+    VeloxViewController.prototype.modify = function(data, callback){
+        if(typeof(data) === "function"){
+            callback = data;
+            data = null;
+        }
+        if(!callback){ callback = function(){} ; }
+        this.enter(data, callback) ;
+    };
+
     VeloxViewController.prototype._prepareDataOnEnter = function(data, callback){
         if(this.prepareDataOnEnter){
             if(this.prepareDataOnEnter.length === 2){

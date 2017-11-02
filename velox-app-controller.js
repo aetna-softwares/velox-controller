@@ -86,6 +86,9 @@
         controller.getRoutes = function(){
             return this._getRoutes(this._currentPosition()) ;
         }.bind(this) ;
+        controller.updateRouteData = function(routeName, newData){
+            return this.updateRouteData(routeName, newData) ;
+        }.bind(this) ;
 
         
 
@@ -193,10 +196,11 @@
 
         return{
             route : route,
-            listenerEnter: listeners.enter.bind(listeners),
-            listenerLeave: listeners.leave.bind(listeners),
-            listenerStack: listeners.stack.bind(listeners),
-            listenerUnstack: listeners.unstack.bind(listeners),
+            listenerEnter: listeners.enter?listeners.enter.bind(listeners):function(){},
+            listenerLeave: listeners.leave?listeners.leave.bind(listeners):function(){},
+            listenerStack: listeners.stack?listeners.stack.bind(listeners):function(){},
+            listenerUnstack: listeners.unstack?listeners.unstack.bind(listeners):function(){},
+            listenerModify: listeners.modify?listeners.modify.bind(listeners):function(){},
             defaultData: data,
             mapData: {}
         };
@@ -281,7 +285,10 @@
                 var routeAddr = routeDestination.route?"#!"+routeDestination.route:"" ;
                 if(routeDestination.data){
                     var dataId = "" ;
-                    var dataStr = JSON.stringify(data) ;
+                    var dataStr = routeDestination.data ;
+                    if(typeof(dataStr) !== "string" && typeof(dataStr) != "number"){
+                        dataStr = JSON.stringify(routeDestination.data) ;
+                    }
                     var mapKey = null;
                     this.routes.forEach(function(route){
                         if(route.route === routeDestination.route){
@@ -325,6 +332,39 @@
             return this.onNavigate(); //no destination given, just execute route
         }
         location.hash = path ;    
+    } ;
+
+    /**
+     * update the data of a route
+     * 
+     * @example
+     * // the current position is #foo$1#bar$2
+     * app.updateRouteData("foo", 3) ;
+     * // new position is #foo$3#bar$2
+     * 
+     * // the current position is #foo$1
+     * app.updateRouteData("bar", 3) ;
+     * // the current position is #foo$1#bar$3
+     * 
+     * @param {string} routeName the name of route to modify
+     * @param {*} newData the new data value
+     */
+    VeloxAppController.prototype.updateRouteData = function(routeName, newData){
+        var currentRoutes = this._getRoutes(this._currentPosition());
+        var found = currentRoutes.some(function(r){
+            if(r.route === routeName){
+                r.data = newData ;
+                return true;
+            }
+        }) ;
+        if(!found){
+            currentRoutes.push({
+                route : routeName,
+                data: newData
+            }) ;
+        }
+        currentRoutes[0].route = "/"+currentRoutes[0].route ;
+        this.navigate(currentRoutes) ;
     } ;
 
     /**
@@ -440,6 +480,7 @@
                         listenerLeave: r.listenerLeave,
                         listenerStack : r.listenerStack,
                         listenerUnstack : r.listenerUnstack,
+                        listenerModify : r.listenerModify,
                         def: r,
                         data: data
                     });
@@ -528,6 +569,14 @@
                 unstackedRoutes.push(newTopRoute) ;
             }
         }
+
+        //check which route is both in previous and current but with different data value
+        var modifiedRoutes = [] ;
+        newRoutes.forEach(function(newRoute){
+            if(previousRoutes.some(function(o){ return o.route === newRoute.route && JSON.stringify(o.data) !== JSON.stringify(newRoute.data) ;})){
+                modifiedRoutes.push(newRoute) ;
+            }
+        }.bind(this)) ;
     
         this.currentRoute = currentPosition ;
         this._removeOldRoutes(removedRoutes, function(err){
@@ -544,8 +593,12 @@
 
                         this._unstackRoutes(unstackedRoutes, function(err){
                             if(err){ throw "Error while unstack routes "+(err instanceof Error ?err.stack:JSON.stringify(err)) ;}
+                        
+                            this._modifyRoutes(modifiedRoutes, function(err){
+                                if(err){ throw "Error while modify routes "+(err instanceof Error ?err.stack:JSON.stringify(err)) ;}
 
                             
+                            }.bind(this)) ;
                         }.bind(this)) ;
                     }.bind(this)) ;
                 }.bind(this)) ;
@@ -628,6 +681,31 @@
         if(route.def.active){
             if(route.listenerUnstack){
                 this._callListener(route, "listenerUnstack", next) ;
+            }else{
+                next() ;
+            }
+        }
+    } ;
+    
+    /**
+     * modify route
+     * 
+     * @private
+     */
+    VeloxAppController.prototype._modifyRoutes = function(modifiedRoutes,callback){
+        if(modifiedRoutes.length === 0){
+            return callback() ;//finished
+        }
+        var route = modifiedRoutes.shift() ;
+
+        var next = function next(err){
+            if(err){ return callback(err); }
+            this._modifyRoutes(modifiedRoutes, callback) ;
+        }.bind(this) ;
+
+        if(route.def.active){
+            if(route.listenerModify){
+                this._callListener(route, "listenerModify", next) ;
             }else{
                 next() ;
             }
