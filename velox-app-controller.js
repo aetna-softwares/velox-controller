@@ -275,56 +275,51 @@
             destination[0].route = destination[0].route.substring(1) ;
         }
 
+        var previousRouteAddr = null;
         destination.forEach(function(routeDestination){
             dataMode = routeDestination.dataMode ;
             if(!dataMode){
                 dataMode = this.dataMode ;
             }
-            // if(typeof(routeDestination.route) === "string"){
-                //move to an existing route
-                var routeAddr = routeDestination.route?"#!"+routeDestination.route:"" ;
-                if(routeDestination.data){
-                    var dataId = "" ;
-                    var dataStr = routeDestination.data ;
-                    if(typeof(dataStr) !== "string" && typeof(dataStr) != "number"){
-                        dataStr = JSON.stringify(routeDestination.data) ;
-                    }
-                    var mapKey = null;
-                    this.routes.forEach(function(route){
-                        if(route.route === routeDestination.route){
-                            if(dataStr !== JSON.stringify(route.defaultData)){
-                                //given data is different from default data
-                                if(dataMode === "bookmarkable"){
-                                    //bookmarkable mode, use the serialized object
-                                    dataId = "$"+encodeURIComponent(dataStr) ;
-                                }else{
-                                    Object.keys(route.mapData).some(function(k){
-                                        if(dataStr === JSON.stringify(route.mapData[k])){
-                                            mapKey = k ;
-                                            return true ;
-                                        }
-                                    }) ;
-                                    if(!mapKey){
-                                        //not found in map
-                                        mapKey = "£"+uuidv4() ;
-                                        route.mapData[mapKey] = data ;
+            //move to an existing route
+            var routeAddr = routeDestination.route?"#!"+routeDestination.route:"" ;
+            if(routeDestination.data){
+                var dataId = "" ;
+                var dataStr = routeDestination.data ;
+                if(typeof(dataStr) !== "string" && typeof(dataStr) != "number"){
+                    dataStr = JSON.stringify(routeDestination.data) ;
+                }
+                var mapKey = null;
+                this.routes.forEach(function(route){
+                    if(route.route === routeDestination.route){
+                        if(dataStr !== JSON.stringify(route.defaultData)){
+                            //given data is different from default data
+                            if(dataMode === "bookmarkable"){
+                                //bookmarkable mode, use the serialized object
+                                dataId = "$"+encodeURIComponent(dataStr) ;
+                            }else{
+                                Object.keys(route.mapData).some(function(k){
+                                    if(dataStr === JSON.stringify(route.mapData[k])){
+                                        mapKey = k ;
+                                        return true ;
                                     }
-                                    dataId = "$"+mapKey ;
+                                }) ;
+                                if(!mapKey){
+                                    //not found in map
+                                    mapKey = "£"+uuidv4() ;
+                                    route.mapData[mapKey] = data ;
                                 }
+                                dataId = "$"+mapKey ;
                             }
                         }
-                    }.bind(this)) ;
-                    routeAddr += dataId ;
-                }
-                path += routeAddr ;
-                
-            //should remove this feature ?
-            // }else{
-            //     //move to a function or a controller with anonymous path
-            //     var anonymousDestination = uuidv4() ;
-            //     this.addRoute(anonymousDestination, destination, data) ;
-            //     path += "#"+anonymousDestination ;
-            // }
+                    }
+                }.bind(this)) ;
+                routeAddr += dataId ;
+            }
+            if(previousRouteAddr !== routeAddr){
+                path += routeAddr ;                
+            }
+            previousRouteAddr = routeAddr ;
         }.bind(this)) ;
 
         if(path === currentPosition){
@@ -351,10 +346,11 @@
      */
     VeloxAppController.prototype.updateRouteData = function(routeName, newData){
         var currentRoutes = this._getRoutes(this._currentPosition());
-        var found = currentRoutes.some(function(r){
+        var found = false;
+        currentRoutes.forEach(function(r){
             if(r.route === routeName){
                 r.data = newData ;
-                return true;
+                found = true;
             }
         }) ;
         if(!found){
@@ -453,8 +449,13 @@
      */
     VeloxAppController.prototype._getRoutes = function(destination){
         var destinationRoutes = destination.split("#") ;
+        if(destination.indexOf("#$") === 0){
+            //special case when destination is #$data, split will give "", "$data" 
+            //but we want only 1 "" route
+            destinationRoutes = destinationRoutes.slice(1) ;
+        }
         var foundRoutes = [];
-        destinationRoutes.forEach(function(r){
+        destinationRoutes.forEach(function(r, urlPosition){
             var routeAndDataId = r.split("$") ;
             var routeDestName = routeAndDataId[0].replace(/^!/, "") ;
             var dataId = routeAndDataId[1] ;
@@ -476,6 +477,7 @@
 
                     foundRoutes.push({
                         route : r.route,
+                        urlPosition: urlPosition,
                         listenerEnter : r.listenerEnter,
                         listenerLeave: r.listenerLeave,
                         listenerStack : r.listenerStack,
@@ -551,9 +553,11 @@
 
         //check which route is in previous and new but was on top in previous and not in top in new
         var stackedRoutes = [] ;
-        if(previousRoutes.length>0){
+        if(previousRoutes.length > 0 && newRoutes.length > 0){
             var previousTopRoute = previousRoutes[previousRoutes.length-1] ;
-            if(newRoutes.some(function(n, i){ return n.route === previousTopRoute.route && i<newRoutes.length-1 ;})){
+            var newTopRoute = newRoutes[newRoutes.length-1] ;
+            if(newTopRoute.urlPosition !== previousTopRoute.urlPosition &&
+                newRoutes.some(function(n, i){ return n.route === previousTopRoute.route && i<newRoutes.length-1 ;})){
                 stackedRoutes.push(previousTopRoute) ;
             }
         }else{
