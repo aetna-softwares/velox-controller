@@ -290,7 +290,7 @@
                 }   
             }
         }else{
-            return callback(null, data) ;
+            return callback(null, data||this.data) ;
         }
     } ;
 
