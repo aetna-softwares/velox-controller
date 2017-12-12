@@ -19,6 +19,82 @@
         }
     }
 
+    /**
+     * Event emiter
+     * 
+     * @constructor
+     */
+    function EventEmiter() {
+        this.listeners = {};
+    }
+
+    /**
+     * Listen to event
+     * 
+     * @param {string} type - the event type name
+     * @param {function} listener - the listener that will be called on event
+     */
+    EventEmiter.prototype.on = function (type, listener) {
+        if (!this.listeners[type]) {
+            this.listeners[type] = [];
+        }
+        this.listeners[type].push(listener);
+        return this;
+    };
+
+    /**
+     * Unregister an event listener
+     * 
+     * @param {string} type - the event type name
+     * @param {function} listener - the listener that will stop to listen
+     */
+    EventEmiter.prototype.off = function (type, listener) {
+        var listeners = this.listeners[type];
+        if (!listeners) {
+            return this;
+        }
+        for (var i = 0; i < listeners.length; i++) {
+            if (listeners[i] === listener) {
+                listeners.splice(i, 1);
+                break;
+            }
+        }
+        return this;
+    };
+
+    /**
+     * Listen to an event only once
+     * 
+     * @param {string} type - the event type name
+     * @param {function} listener - the listener that will be called on event
+     */
+    EventEmiter.prototype.once = function (type, listener) {
+        var self = this;
+        var once;
+        this.on(type, once = function () {
+            self.off(type, once);
+            listener.call(self, arguments);
+        });
+    };
+
+    /**
+     * Emit an event
+     * 
+     * @private
+     * @param {string} type - the event type name
+     * @param {object} [data=undefined] - the data to send with the event
+     */
+    EventEmiter.prototype.emit = function (type, data, source) {
+        var listeners = this.listeners[type];
+        if (!listeners) {
+            return;
+        }
+        for (var i = 0; i < listeners.length; i++) {
+            var listener = listeners[i];
+            listener({ type: type, data: data, source: source||this });
+        }
+    };
+
 
     /**
      * @typedef VeloxController
@@ -41,6 +117,8 @@
      * This class handle individual controllers of your app and the navigation between them
      */
     function VeloxAppController(options){
+        EventEmiter.call(this);
+
         this.controllers = [] ;
         this.routes = [];
         this.interceptors = [] ;
@@ -55,6 +133,9 @@
             this.dataMode = options.dataMode ;
         }
     }
+
+    VeloxAppController.prototype = Object.create(EventEmiter.prototype);
+    VeloxAppController.prototype.constructor = VeloxAppController;
 
     /**
      * Register a controller in the app.
@@ -71,6 +152,8 @@
 
         this.controllers.push(controller) ;
 
+        controller.appController = this;
+
         controller.navigate = function(destination, data, dataMode){
             this.navigate(destination, data, dataMode) ;
         }.bind(this) ;
@@ -85,6 +168,15 @@
         }.bind(this) ;
         controller.getRoutes = function(){
             return this._getRoutes(this._currentPosition()) ;
+        }.bind(this) ;
+        controller.getRoute = function(routeName){
+            var routes = this._getRoutes(this._currentPosition()) ;
+            for(var i=0; i<routes.length; i++){
+                if(routes[i].route === routeName){
+                    return routes[i];
+                }
+            }
+            return null;
         }.bind(this) ;
         controller.updateRouteData = function(routeName, newData){
             return this.updateRouteData(routeName, newData) ;
@@ -601,7 +693,15 @@
                             this._modifyRoutes(modifiedRoutes, function(err){
                                 if(err){ throw "Error while modify routes "+(err instanceof Error ?err.stack:JSON.stringify(err)) ;}
 
-                            
+                                this.emit("routeChanged", {
+                                    previousRoutes: previousRoutes,
+                                    newRoutes: newRoutes,
+                                    removedRoutes: removedRoutes,
+                                    addedRoutes: addedRoutes,
+                                    stackedRoutes: stackedRoutes,
+                                    unstackedRoutes: unstackedRoutes,
+                                    modifiedRoutes: modifiedRoutes,
+                                }) ;
                             }.bind(this)) ;
                         }.bind(this)) ;
                     }.bind(this)) ;
@@ -620,11 +720,11 @@
         if(removedRoutes.length === 0){
             return callback() ;//finished
         }
-        var route = removedRoutes.shift() ;
+        var route = removedRoutes[0] ;
 
         var next = function next(err){
             if(err){ return callback(err); }
-            this._removeOldRoutes(removedRoutes, callback) ;
+            this._removeOldRoutes(removedRoutes.slice(1), callback) ;
         }.bind(this) ;
 
         if(route.def.active){
@@ -649,11 +749,11 @@
         if(stackedRoutes.length === 0){
             return callback() ;//finished
         }
-        var route = stackedRoutes.shift() ;
+        var route = stackedRoutes[0] ;
 
         var next = function next(err){
             if(err){ return callback(err); }
-            this._stackRoutes(stackedRoutes, callback) ;
+            this._stackRoutes(stackedRoutes.slice(1), callback) ;
         }.bind(this) ;
 
         if(route.def.active){
@@ -675,11 +775,11 @@
         if(unstackedRoutes.length === 0){
             return callback() ;//finished
         }
-        var route = unstackedRoutes.shift() ;
+        var route = unstackedRoutes[0] ;
 
         var next = function next(err){
             if(err){ return callback(err); }
-            this._unstackRoutes(unstackedRoutes, callback) ;
+            this._unstackRoutes(unstackedRoutes.slice(1), callback) ;
         }.bind(this) ;
 
         if(route.def.active){
@@ -724,11 +824,11 @@
         if(activeRoutes.length === 0){
             return callback() ;//finished
         }
-        var route = activeRoutes.shift() ;
+        var route = activeRoutes[0] ;
 
         var next = function next(err){
             if(err){ return callback(err); }
-            this._checkActiveRoutes(activeRoutes, interceptors, currentPosition, callback) ;
+            this._checkActiveRoutes(activeRoutes.slice(1), interceptors, currentPosition, callback) ;
         }.bind(this) ;
 
 
@@ -744,11 +844,11 @@
         if(newRoutes.length === 0){
             return callback() ;//finished
         }
-        var route = newRoutes.shift() ;
+        var route = newRoutes[0] ;
 
         var next = function next(err){
             if(err){ return callback(err); }
-            this._openNewRoutes(newRoutes, currentPosition, callback) ;
+            this._openNewRoutes(newRoutes.slice(1), currentPosition, callback) ;
         }.bind(this) ;
 
         route.def.active = true ;
@@ -783,10 +883,10 @@
         if(interceptors.length === 0){
             return callback() ;//finished
         }
-        var inter = interceptors.shift() ;
+        var inter = interceptors[0] ;
 
         var next = function next(){
-            this._runInterceptor(interceptors, currentPosition, route, callback) ;
+            this._runInterceptor(interceptors.slice(1), currentPosition, route, callback) ;
         }.bind(this) ;
 
         var args = [currentPosition, route, next] ;
