@@ -295,43 +295,35 @@
     VeloxFormController.prototype._onBtCreate = function(){
         this.getDefaultData(function(err, defaultData){
             if(err){ throw err; }
-            this.view.render(defaultData, function(){
-                this._toggleListAuto(true, function(){
-                    this.setMode("create") ;
-                }.bind(this)) ;
-            }.bind(this)) ;
+            this.view.render(defaultData);
+            this._toggleListAuto(true) ;
+            this.setMode("create") ;
         }.bind(this)) ;
     };
     VeloxFormController.prototype._onBtModify = function(){
-        this._toggleListAuto(true, function(){
-            this.setMode("modify") ;
-        }.bind(this)) ;
+        this._toggleListAuto(true);
+        this.setMode("modify") ;
     };
     VeloxFormController.prototype._onBtCancel = function(){
-        this._toggleListAuto(false, function(){
-            if(this.currentRecord){
-                this.view.render(this.currentRecord, function(){
-                    this.setMode("read") ;
-                }.bind(this)) ;
-            }else{
-                //render nothing in the case nobody listen to back event
-                this.view.render({}, function(){
-                    this.setMode("read") ;
-                    this.view.emit("back") ;
-                }.bind(this)) ;
-            }
-        }.bind(this)) ;
+        this._toggleListAuto(false);
+        if(this.currentRecord){
+            this.view.render(this.currentRecord);
+            this.setMode("read") ;
+        }else{
+            //render nothing in the case nobody listen to back event
+            this.view.render({});
+            this.setMode("read") ;
+            this.view.emit("back") ;
+        }
     };
 
     VeloxFormController.prototype._onBtBack = function(){
         this.view.emit("back") ;
     };
 
-    VeloxFormController.prototype._toggleListAuto = function(active, callback){
+    VeloxFormController.prototype._toggleListAuto = function(active){
         if(this.view.setListAuto){
-            this.view.setListAuto(active, callback);
-        }else{
-            callback() ;
+            this.view.setListAuto(active);
         }
     };
 
@@ -503,13 +495,11 @@ VeloxFormController.prototype._onBtValidate = function(){
 
                 this.saveRecords(recordsToSave, function(err, savedRecord){
                     if(err){ return done(err) ;}
-                    this._toggleListAuto(false, function(err){
-                        if(err){ return done(err) ;}
-                        this.currentRecord = savedRecord ;
-                        this.view.render(savedRecord) ;
-                        this.setMode("read") ;
-                        done() ;
-                    }.bind(this)) ;
+                    this._toggleListAuto(false);
+                    this.currentRecord = savedRecord ;
+                    this.view.render(savedRecord) ;
+                    this.setMode("read") ;
+                    done() ;
                 }.bind(this)) ;
             }.bind(this)) ;
         }.bind(this)) ;
@@ -537,13 +527,11 @@ VeloxFormController.prototype._onBtDelete = function(){
             this.view.longTask(function(done){
                 this.deleteRecord(this.currentRecord, function(err){
                     if(err){ return done(err); }
-                    this._toggleListAuto(false, function(err){
-                        if(err){ return done(err); }
-                        this.view.render({}) ;//render nothing in the case nobody listen to back event
-                        this.setMode("read") ;
-                        this.view.emit("back") ;
-                        done() ;
-                    }.bind(this)) ;
+                    this._toggleListAuto(false);
+                    this.view.render({}) ;//render nothing in the case nobody listen to back event
+                    this.setMode("read") ;
+                    this.view.emit("back") ;
+                    done() ;
                 }.bind(this)) ;
             }.bind(this)) ;
         }
@@ -571,14 +559,9 @@ VeloxFormController.prototype.prepareDataOnEnter = function(data, callback){
 } ;
 
 function doEnterView(){
-    this.view.longTask(function(done){
-        //toggle the list auto input
-        this._toggleListAuto(this.mode !== "read", function(err){
-            if(err){ return done(err); }
-            this.setMode(this.mode) ;
-            done() ;
-        }.bind(this)) ;
-    }.bind(this)) ;
+    //toggle the list auto input
+    this._toggleListAuto(this.mode !== "read");
+    this.setMode(this.mode) ;
 }
 
 VeloxFormController.prototype.refresh = function(callback){

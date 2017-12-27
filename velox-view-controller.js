@@ -248,10 +248,8 @@
                     if(this.viewOptions.openInPopup){
                         this.view.openInPopup(this.viewOptions.popup, function(err){
                             if(err){ return done(err); }
-                            this.view.render(data, function(err){
-                                if(err){ return done(err); }
-                                this.emit("enter", done) ;
-                            }.bind(this)) ;
+                            this.view.render(data);
+                            this.emit("enter", done) ;
                         }.bind(this));
                     }else{
                         this.view.open(data, function(err){
@@ -311,11 +309,9 @@
                 if(data){
                     this.data = data ;
                 }
-                this.view.render(data, function(err){
-                    if(err){ return done(err); }
-                    this.emit("refresh") ;
-                    done() ;
-                }.bind(this));
+                this.view.render(data)
+                this.emit("refresh") ;
+                done() ;
             }.bind(this)) ;
         }.bind(this), callback) ;
     } ;

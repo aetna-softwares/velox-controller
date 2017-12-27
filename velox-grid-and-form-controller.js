@@ -97,7 +97,7 @@
     } ;
 
     VeloxGridAndFormController.prototype._onInitDone = function(){
-        var gridEl = this.viewGrid.container.querySelector('[data-field-def="'+this.table+'.grid"]') ;
+        var gridEl = this.viewGrid.elementsHavingAttribute('data-field-def="'+this.table+'.grid"')[0];
         if(gridEl){
             gridEl.addEventListener("dblClick", function(ev){
                 this.viewGrid.emit("openRecord", ev.record) ;

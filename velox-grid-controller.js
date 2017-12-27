@@ -171,7 +171,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
 
                     html = script+'<div class="velox-grid-container">'+
                         '<h1>'+title+'</h1>'+
-                        '<div id="'+this.table+'-grid" class="velox-grid" data-field-def="'+this.table+'.grid" data-bind="results">'+
+                        '<div id="'+this.table+'Grid" class="velox-grid" data-field-def="'+this.table+'.grid" data-bind="results">'+
                             tableHTML+
                         '</div>'+
                     '</div>' ;
@@ -182,7 +182,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
         this.view.getFilters = function(){
             var items = this.viewOptions.filters;
             if(this.view.initDone){
-                items = this.view.EL[this.table+"-grid"].toolbar.items ;
+                items = this.view.EL[this.table+"Grid"].toolbar.items ;
                 items.forEach(function(item){
                     if(item.id.indexOf("filter-") === 0){
                         item.name = item.id.substring(item.id.indexOf("-")+1) ;
@@ -207,10 +207,10 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
         }.bind(this) ;
         this.view.on("displayed", function(){
             //force grid re-render on display
-            this.view.EL[this.table+"-grid"].render() ;
+            this.view.EL[this.table+"Grid"].render() ;
         }.bind(this)) ;
         this.view.on("initDone", function(){
-            this.view.EL[this.table+"-grid"].toolbar.on('click', function(event) {
+            this.view.EL[this.table+"Grid"].toolbar.on('click', function(event) {
                 if(event.target.indexOf("filter-") === 0){
                     event.onComplete = function(){
                         this.view.emit("filterChanged", this.view.getFilters()) ;
