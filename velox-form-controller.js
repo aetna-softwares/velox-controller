@@ -104,6 +104,7 @@
         }
 
         this.mode = "read" ;
+        this.validations = [this.checkRequired] ;
 
         VeloxViewController.call(this,options, null) ;
 
@@ -181,7 +182,7 @@
                     if(!title) {
                         title = VeloxWebView.tr?VeloxWebView.tr("fields.table."+this.table):"Form" ;
                     }
-                    html = script+'<h1>'+title+'</h1><div id="formControlButtons">$FORM_BUTTONS</div>' ;
+                    html = script+'<h1>'+title+'</h1><div id="formControlButtons">$FORM_BUTTONS</div><div class="bg-danger" id="formErrorMsg"></div>' ;
                     if(!formHTML){
                         formHTML = "";
                         schema[this.table].columns.forEach(function(col){
@@ -205,6 +206,7 @@
                 }
                 buttons += customButtons.trim();
                 html = html.replace("$FORM_BUTTONS", buttons) ;
+                html = "<style>div.readonly[required] label::after { display: none; } div[required] label::after { content: ' *'; color: red; }</style>\n"+html;
                 callback(html) ;
             }.bind(this)) ;
         }.bind(this) ;
@@ -214,6 +216,16 @@
         this.view.on("btCancel", this._onBtCancel.bind(this)) ;
         this.view.on("btValidate", this._onBtValidate.bind(this)) ;
         this.view.on("btDelete", this._onBtDelete.bind(this)) ;
+        this.view.formError = function(msg){
+            this.EL.formErrorMsg.innerHTML = msg ;
+        } ;
+        this.view.clearFormError = function(){
+            var errorFields = this.container.querySelectorAll(".has-error");
+            for(var i=0; i<errorFields.length; i++){
+                errorFields[i].className = errorFields[i].className.replace(/has-error/g, "") ;
+            }
+            this.EL.formErrorMsg.innerHTML = "" ;
+        } ;
     };
 
     /**
@@ -238,6 +250,7 @@
             this.view.EL.btValidate && (this.view.EL.btValidate.style.display = "none");
             this.view.EL.btDelete && (this.view.EL.btDelete.style.display = "");
             this.view.EL.btBack && (this.view.EL.btBack.style.display = "");
+            this.view.clearFormError() ;
             this.view.setReadOnly(true) ;
         }else if(mode === "create"){
             this.view.EL.btCreate && (this.view.EL.btCreate.style.display = "none");
@@ -328,9 +341,7 @@
     };
 
 
-    VeloxFormController.prototype._checkInput = function(callback){
-        callback(null, true) ;
-    };
+   
 
     function doLeaveView(){
         this.currentRecord = null;
@@ -484,11 +495,14 @@ VeloxFormController.prototype.saveRecords = function(recordsToSave, callback){
 VeloxFormController.prototype._onBtValidate = function(){
     this.view.longTask(function(done){
         var dataBeforeModif = JSON.parse(JSON.stringify(this.view.getBoundObject())) ;
-        var viewData = this.view.updateData() ;
-        this._checkInput(function(err, checkOk){
+        var dataAfterModif = JSON.parse(JSON.stringify(dataBeforeModif)) ;
+        var viewData = this.view.updateData(dataAfterModif) ;
+        
+        this.view.clearFormError() ;
+        this.checkInput(function(err, checkOk){
             if(err){ return done(err); }
             if(!checkOk){
-                done() ;
+                return done() ;
             }
             this.getRecordsToSave(viewData, dataBeforeModif, function(err, recordsToSave){
                 if(err){ return done(err) ;}
@@ -504,6 +518,65 @@ VeloxFormController.prototype._onBtValidate = function(){
             }.bind(this)) ;
         }.bind(this)) ;
     }.bind(this)) ;
+};
+
+VeloxFormController.prototype.checkRequired = function(view){
+    var errors = [] ;
+    var requiredElements = view.elementsHavingAttribute("required");
+    for(var i=0; i<requiredElements.length; i++){
+        var el = requiredElements[i] ;
+        var val = el.getValue?el.getValue():el.value ;
+        if(!val){
+            var label = el.getAttribute("data-field-label") ;
+            errors.push({
+                el: el,
+                field: el.getAttribute("data-bind"),
+                fieldDef: el.getAttribute("data-field-def"),
+                label: label,
+                msg: VeloxWebView.tr?VeloxWebView.tr("form.missingRequiredField", {field: label}):"The field "+label+" is missing"
+            }) ;
+        }
+    }
+    return errors ;
+};
+
+VeloxFormController.prototype.checkInput = function(callback){
+    var errors = [] ;
+    var calls = [] ;
+    var validations = this.validations.concat(this.view.validations||[]) ;
+    validations.forEach(function(validation){
+        calls.push(function(cb){
+            if(validation.length === 2){
+                //with callback
+                validation(this.view, function(err, detectedErrors){
+                    if(err){ return cb(err) ;}
+                    errors = errors.concat(detectedErrors||[]) ;
+                    cb() ;
+                }) ;
+            }else{
+                var detectedErrors = validation(this.view);
+                errors = errors.concat(detectedErrors||[]) ;
+                cb() ;
+            }
+        }.bind(this)) ;
+    }.bind(this)) ;
+    
+    VeloxWebView._asyncSeries(calls, function(err){
+        if(err){ return callback(err) ;}
+        if(errors.length > 0){
+            errors.forEach(function(e){
+                if(e.el){
+                    if(e.el.className.indexOf("has-error") === -1){
+                        e.el.className += " has-error" ;
+                    }
+                }
+            }) ;
+            var msg = errors.map(function(e){ return "<p>"+e.msg+"</p>" ;}).join("\n") ;
+            this.view.formError(msg) ;
+        }
+        callback(null, errors.length === 0) ;
+    }.bind(this)) ;
+
 };
 
 /**
