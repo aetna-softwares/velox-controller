@@ -157,8 +157,8 @@
         controller.navigate = function(destination, data, dataMode){
             this.navigate(destination, data, dataMode) ;
         }.bind(this) ;
-        controller.resumeNavigation = function(){
-            this.resumeNavigation() ;
+        controller.resumeNavigation = function(defaultRoute){
+            this.resumeNavigation(defaultRoute) ;
         }.bind(this) ;
         controller.addRoute = function(){
             this.addRoute.apply(this, arguments) ;
@@ -511,7 +511,11 @@
     VeloxAppController.prototype.resumeNavigation = function(defaultRoute){
         var routeToResume = this.suspendedRoute ;
         this.suspendedRoute = null;
-        this._removeOldRoutes([this.forcedRoute], function(err){
+        var routesToRemove = [] ;
+        if(this.forcedRoute){
+            routesToRemove.push(this.forcedRoute) ;
+        }
+        this._removeOldRoutes(routesToRemove, function(err){
             if(err){ throw "Error while remove old route "+err ;}
             this.forcedRoute = null;
             this.navigate(routeToResume || defaultRoute) ;
