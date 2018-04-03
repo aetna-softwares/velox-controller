@@ -194,7 +194,7 @@
                     html += formHTML ;
                 }
                 
-                var buttons = this.viewOptions.buttonsHTML || VeloxFormController.globalsOptions.buttonsHTML ;
+                var buttons = this.viewOptions.buttonsHTML || VeloxFormController.globalsOptions.buttonsHTML ;
                 if(!buttons){
                     buttons = '' ;
                     buttons += '<button id="btBack" data-emit>'+this.viewOptions.labels.back+'</button>' ;
