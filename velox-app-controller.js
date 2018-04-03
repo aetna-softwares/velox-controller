@@ -496,7 +496,7 @@
      */
     VeloxAppController.prototype.isSuspended = function(){
         if(this.forcedRoute){
-            return this.forcedRoute.route ||  true ;
+            return this.forcedRoute.route || true ;
         }
         return false;
     } ;

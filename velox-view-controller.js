@@ -309,7 +309,7 @@
                 if(data){
                     this.data = data ;
                 }
-                this.view.render(data)
+                this.view.render(data) ;
                 this.emit("refresh") ;
                 done() ;
             }.bind(this)) ;
