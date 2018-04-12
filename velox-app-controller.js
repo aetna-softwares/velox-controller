@@ -616,7 +616,8 @@
             //get routes from new path
             newRoutes = this._getRoutes(currentPosition);
             if(newRoutes.length === 0){
-                throw "No route found for "+currentPosition ;
+                console.info("No route found for "+currentPosition) ;
+                return;
             }
 
             interc = this.interceptors.filter(function(int){
