@@ -26,12 +26,14 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
             
         VeloxViewController.call(this,options, null) ;
 
-        this.on("initView", doInitView.bind(this)) ;
+        this.on("initView", function(){
+            this._doInitView() ;
+        }.bind(this)) ;
     } ;
     VeloxGridController.prototype = Object.create(VeloxViewController.prototype);
     VeloxGridController.prototype.constructor = VeloxGridController;
 
-    function doInitView(){
+    VeloxGridController.prototype._doInitView = function(){
         //always load this CSS
         this.view.loadStaticCss([
                 ".velox-grid-container {",
@@ -210,18 +212,20 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
             this.view.EL[this.table+"Grid"].render() ;
         }.bind(this)) ;
         this.view.on("initDone", function(){
-            this.view.EL[this.table+"Grid"].toolbar.on('click', function(event) {
-                if(event.target.indexOf("filter-") === 0){
-                    event.onComplete = function(){
-                        this.view.emit("filterChanged", this.view.getFilters()) ;
-                    }.bind(this) ;
-                }
-                if(event.target === "w2ui-reload"){
-                    event.onComplete = function(){
-                        this.view.emit("reloadGrid") ;
-                    }.bind(this) ;
-                }
-            }.bind(this)) ;
+            if(this.view.EL[this.table+"Grid"] && this.view.EL[this.table+"Grid"].toolbar){
+                this.view.EL[this.table+"Grid"].toolbar.on('click', function(event) {
+                    if(event.target.indexOf("filter-") === 0){
+                        event.onComplete = function(){
+                            this.view.emit("filterChanged", this.view.getFilters()) ;
+                        }.bind(this) ;
+                    }
+                    if(event.target === "w2ui-reload"){
+                        event.onComplete = function(){
+                            this.view.emit("reloadGrid") ;
+                        }.bind(this) ;
+                    }
+                }.bind(this)) ;
+            }
         }.bind(this)) ;
         this.view.on("filterChanged", this.refresh.bind(this)) ;
         this.view.on("reloadGrid", this.refresh.bind(this)) ;
