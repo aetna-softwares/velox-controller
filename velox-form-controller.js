@@ -143,16 +143,30 @@
                 var indexScript = htmlLower.indexOf("<script") ;
                 var indexStyle = htmlLower.indexOf("<style") ;
                 
-                if(indexScript === 0 /*script is first tag*/
-                    || (indexScript !== -1 && indexStyle === 0 && indexScript < htmlLower.indexOf("</style>")+10) /*script follow style that is first tag */
-                ){
-                    //allow <script> at the beggining
-                    startIndex = htmlLower.indexOf("<", htmlLower.indexOf("</script>")+"</script>".length) ;
-                    script = html.substring(0, startIndex) ;
-                }else if(indexStyle === 0){
-                    //having <style> but no <script>
-                    startIndex = htmlLower.indexOf("<", htmlLower.indexOf("</style>")+"</style>".length) ;
-                    script = html.substring(0, startIndex) ;
+                var indexSecurity = 0;
+                while(true){
+                    if(indexScript === startIndex /*script is first tag*/
+                        || (indexScript !== -1 && indexStyle === 0 && indexScript < htmlLower.indexOf("</style>")+10) /*script follow style that is first tag */
+                    ){
+                        //allow <script> at the beggining
+                        var newStartIndex = htmlLower.indexOf("<", htmlLower.indexOf("</script>", startIndex)+"</script>".length, startIndex) ;
+                        script += html.substring(startIndex, newStartIndex) ;
+                        startIndex = newStartIndex;
+                    }else if(indexStyle === startIndex){
+                        //having <style> but no <script>
+                        var newStartIndex = htmlLower.indexOf("<", htmlLower.indexOf("</style>", startIndex)+"</style>".length, startIndex) ;
+                        script += html.substring(startIndex, newStartIndex) ;
+                        startIndex = newStartIndex;
+                    }else{
+                        break;
+                    }
+                    indexScript = htmlLower.indexOf("<script", startIndex) ;
+                    indexStyle = htmlLower.indexOf("<style", startIndex) ;
+                    indexSecurity++;
+                    if(indexSecurity>10){
+                        //more than 10 loop, this should not happen
+                        break;
+                    }
                 }
                 
                 
@@ -182,7 +196,7 @@
                     if(!title) {
                         title = VeloxWebView.tr?VeloxWebView.tr("fields.table."+this.table):"Form" ;
                     }
-                    html = script+'<h1>'+title+'</h1><div id="formControlButtons">$FORM_BUTTONS</div><div class="bg-danger" id="formErrorMsg"></div>' ;
+                    html = script+'$FORM_TITLE<div id="formControlButtons">$FORM_BUTTONS</div><div class="bg-danger" id="formErrorMsg"></div>' ;
                     if(!formHTML){
                         formHTML = "";
                         schema[this.table].columns.forEach(function(col){
@@ -206,6 +220,13 @@
                 }
                 buttons += customButtons.trim();
                 html = html.replace("$FORM_BUTTONS", buttons) ;
+
+                var titleHTML = this.viewOptions.titleHTML || VeloxFormController.globalsOptions.titleHTML ;
+                if(!titleHTML){
+                    titleHTML = '<h1>'+title+'</h1>' ;
+                }
+
+                html = html.replace("$FORM_TITLE", titleHTML) ;
                 html = "<style>div.readonly[required] label::after { display: none; } div[required] label::after { content: ' *'; color: red; }</style>\n"+html;
                 callback(html) ;
             }.bind(this)) ;
@@ -667,6 +688,7 @@ VeloxFormController.globalsOptions = {} ;
  * @typedef VeloxFormControllerGlobalOptions
  * @type {object}
  * @property {string} [buttonsHTML] The HTML to use for toolbar buttons, it must have buttons "btBack", "btCreate", "btModify",  "btCancel",  "btValidate", "btDelete" which emit the corresponding events
+ * @property {string} [titleHTML] The HTML to use for title
  */
 
 
