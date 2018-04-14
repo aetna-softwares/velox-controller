@@ -33,6 +33,53 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
     VeloxGridController.prototype = Object.create(VeloxViewController.prototype);
     VeloxGridController.prototype.constructor = VeloxGridController;
 
+    VeloxGridController.prototype._getScriptAndTable = function(html){
+        var tableHTML = null;
+        html = html.trim() ;
+        var htmlLower = html.toLowerCase() ;
+        var script = "" ;
+        var startIndex = 0;
+        
+        var indexScript = htmlLower.indexOf("<script") ;
+        var indexStyle = htmlLower.indexOf("<style") ;
+        
+        var indexSecurity = 0;
+        while(true){
+            if(indexScript === startIndex /*script is first tag*/
+                || (indexScript !== -1 && indexStyle === 0 && indexScript < htmlLower.indexOf("</style>")+10) /*script follow style that is first tag */
+            ){
+                //allow <script> at the beggining
+                var newStartIndex = htmlLower.indexOf("<", htmlLower.indexOf("</script>", startIndex)+"</script>".length, startIndex) ;
+                script += html.substring(startIndex, newStartIndex) ;
+                startIndex = newStartIndex;
+            }else if(indexStyle === startIndex){
+                //having <style> but no <script>
+                var newStartIndex = htmlLower.indexOf("<", htmlLower.indexOf("</style>", startIndex)+"</style>".length, startIndex) ;
+                script += html.substring(startIndex, newStartIndex) ;
+                startIndex = newStartIndex;
+            }else{
+                break;
+            }
+            indexScript = htmlLower.indexOf("<script", startIndex) ;
+            indexStyle = htmlLower.indexOf("<style", startIndex) ;
+            indexSecurity++;
+            if(indexSecurity>10){
+                //more than 10 loop, this should not happen
+                break;
+            }
+        }
+        
+        
+        if(htmlLower.indexOf("<table") === startIndex && htmlLower.lastIndexOf("</table>") === htmlLower.length-"</table>".length){
+            //just <table></table> element in the HTML, it is just the column customization
+            tableHTML=html.substring(startIndex) ;
+            html = "" ;
+        }
+        return {
+            script: script,
+            tableHTML: tableHTML
+        } ;
+    } ;
     VeloxGridController.prototype._doInitView = function(){
         //always load this CSS
         this.view.loadStaticCss([
@@ -75,32 +122,12 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
             }.bind(this) ;
 
             getHTMLNormal(function(html){
-                var tableHTML = null;
-                html = html.trim() ;
-                var htmlLower = html.toLowerCase() ;
-                var script = "" ;
-                var startIndex = 0;
 
-                var indexScript = htmlLower.indexOf("<script") ;
-                var indexStyle = htmlLower.indexOf("<style") ;
+                var scriptAndTable = this._getScriptAndTable(html);
+
+                var tableHTML = scriptAndTable.tableHTML;
+                var script = scriptAndTable.script;
                 
-                if(indexScript === 0 /*script is first tag*/
-                    || (indexScript !== -1 && indexStyle === 0 && indexScript < htmlLower.indexOf("</style>")+10) /*script follow style that is first tag */
-                ){
-                    //allow <script> at the beggining
-                    startIndex = htmlLower.indexOf("<", htmlLower.indexOf("</script>")+"</script>".length) ;
-                    script = html.substring(0, startIndex) ;
-                }else if(indexStyle === 0){
-                    //having <style> but no <script>
-                    startIndex = htmlLower.indexOf("<", htmlLower.indexOf("</style>")+"</style>".length) ;
-                    script = html.substring(0, startIndex) ;
-                }
-
-                if(htmlLower.indexOf("<table") === startIndex && htmlLower.lastIndexOf("</table>") === html.length-"</table>".length){
-                    //just <table></table> element in the HTML, it is just the column customization
-                    tableHTML = html ;
-                    html = "" ;
-                }
                 if(!html){
                     //no HTML
                     var gridShowOptions = [] ;
