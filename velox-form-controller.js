@@ -138,10 +138,12 @@
                 html = html.trim() ;
                 var htmlLower = html.toLowerCase() ;
                 var script = "" ;
+                var header = "" ;
                 var startIndex = 0;
                 
                 var indexScript = htmlLower.indexOf("<script") ;
                 var indexStyle = htmlLower.indexOf("<style") ;
+                var indexHeader = htmlLower.indexOf("<header") ;
                 
                 var indexSecurity = 0;
                 while(true){
@@ -157,11 +159,17 @@
                         var newStartIndex = htmlLower.indexOf("<", htmlLower.indexOf("</style>", startIndex)+"</style>".length, startIndex) ;
                         script += html.substring(startIndex, newStartIndex) ;
                         startIndex = newStartIndex;
+                    }else if(indexHeader === startIndex){
+                        //having <style> but no <script>
+                        var newStartIndex = htmlLower.indexOf("<", htmlLower.indexOf("</header>", startIndex)+"</header>".length, startIndex) ;
+                        header += html.substring(startIndex, newStartIndex) ;
+                        startIndex = newStartIndex;
                     }else{
                         break;
                     }
                     indexScript = htmlLower.indexOf("<script", startIndex) ;
                     indexStyle = htmlLower.indexOf("<style", startIndex) ;
+                    indexHeader = htmlLower.indexOf("<header", startIndex) ;
                     indexSecurity++;
                     if(indexSecurity>10){
                         //more than 10 loop, this should not happen
@@ -217,9 +225,11 @@
                     buttons += '<button id="btCancel" data-emit>'+this.viewOptions.labels.cancel+'</button>' ;
                     buttons += '<button id="btValidate" data-emit>'+this.viewOptions.labels.validate+'</button>' ;
                     buttons += '<button id="btDelete" data-emit>'+this.viewOptions.labels.delete+'</button>' ;
+                    buttons += '$HEADER' ;
                 }
                 buttons += customButtons.trim();
                 html = html.replace("$FORM_BUTTONS", buttons) ;
+                html = html.replace("$HEADER", header) ;
 
                 var titleHTML = this.viewOptions.titleHTML || VeloxFormController.globalsOptions.titleHTML ;
                 if(!titleHTML){
@@ -530,10 +540,11 @@ VeloxFormController.prototype._onBtValidate = function(){
 
                 this.saveRecords(recordsToSave, function(err, savedRecord){
                     if(err){ return done(err) ;}
-                    this._toggleListAuto(false);
                     this.currentRecord = savedRecord ;
-                    this.view.render(savedRecord) ;
-                    this.setMode("read") ;
+                    this.refresh() ;
+                    // this._toggleListAuto(false);
+                    // this.view.render(savedRecord) ;
+                    // this.setMode("read") ;
                     done() ;
                 }.bind(this)) ;
             }.bind(this)) ;
