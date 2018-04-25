@@ -275,32 +275,32 @@
      */
     VeloxFormController.prototype.applyMode = function(mode){
         if(mode === "read"){
-            this.view.EL.btCreate && (this.view.EL.btCreate.style.display = "");
-            this.view.EL.btModify && (this.view.EL.btModify.style.display = "");
-            this.view.EL.btCancel && (this.view.EL.btCancel.style.display = "none");
-            this.view.EL.btValidate && (this.view.EL.btValidate.style.display = "none");
-            this.view.EL.btDelete && (this.view.EL.btDelete.style.display = "");
-            this.view.EL.btBack && (this.view.EL.btBack.style.display = "");
+            this.view.EL.btCreate && this.view.EL.btCreate.style && (this.view.EL.btCreate.style.display = "");
+            this.view.EL.btModify && this.view.EL.btModify.style && (this.view.EL.btModify.style.display = "");
+            this.view.EL.btCancel && this.view.EL.btCancel.style && (this.view.EL.btCancel.style.display = "none");
+            this.view.EL.btValidate && this.view.EL.btValidate.style && (this.view.EL.btValidate.style.display = "none");
+            this.view.EL.btDelete && this.view.EL.btDelete.style && (this.view.EL.btDelete.style.display = "");
+            this.view.EL.btBack && this.view.EL.btBack.style && (this.view.EL.btBack.style.display = "");
             this.view.clearFormError() ;
             this.view.setReadOnly(true) ;
         }else if(mode === "create"){
-            this.view.EL.btCreate && (this.view.EL.btCreate.style.display = "none");
-            this.view.EL.btModify && (this.view.EL.btModify.style.display = "none");
-            this.view.EL.btCancel && (this.view.EL.btCancel.style.display = "");
-            this.view.EL.btValidate && (this.view.EL.btValidate.style.display = "");
-            this.view.EL.btDelete && (this.view.EL.btDelete.style.display = "none");
-            this.view.EL.btBack && (this.view.EL.btBack.style.display = "none");
+            this.view.EL.btCreate && this.view.EL.btCreate.style && (this.view.EL.btCreate.style.display = "none");
+            this.view.EL.btModify && this.view.EL.btModify.style && (this.view.EL.btModify.style.display = "none");
+            this.view.EL.btCancel && this.view.EL.btCancel.style && (this.view.EL.btCancel.style.display = "");
+            this.view.EL.btValidate && this.view.EL.btValidate.style && (this.view.EL.btValidate.style.display = "");
+            this.view.EL.btDelete && this.view.EL.btDelete.style && (this.view.EL.btDelete.style.display = "none");
+            this.view.EL.btBack && this.view.EL.btBack.style && (this.view.EL.btBack.style.display = "none");
             this.view.setReadOnly(false) ;
             this.view.elementsHavingAttribute("data-always-readonly").concat(this.view.elementsHavingAttribute("data-create-readonly")).forEach(function(el){
                 el.setReadOnly(true) ;
             }) ;                                                    
         }else if(mode === "modify"){
-            this.view.EL.btCreate && (this.view.EL.btCreate.style.display = "none");
-            this.view.EL.btModify && (this.view.EL.btModify.style.display = "none");
-            this.view.EL.btCancel && (this.view.EL.btCancel.style.display = "");
-            this.view.EL.btValidate && (this.view.EL.btValidate.style.display = "");
-            this.view.EL.btDelete && (this.view.EL.btDelete.style.display = "none");
-            this.view.EL.btBack && (this.view.EL.btBack.style.display = "none");
+            this.view.EL.btCreate && this.view.EL.btCreate.style && (this.view.EL.btCreate.style.display = "none");
+            this.view.EL.btModify && this.view.EL.btModify.style && (this.view.EL.btModify.style.display = "none");
+            this.view.EL.btCancel && this.view.EL.btCancel.style && (this.view.EL.btCancel.style.display = "");
+            this.view.EL.btValidate && this.view.EL.btValidate.style && (this.view.EL.btValidate.style.display = "");
+            this.view.EL.btDelete && this.view.EL.btDelete.style && (this.view.EL.btDelete.style.display = "none");
+            this.view.EL.btBack && this.view.EL.btBack.style && (this.view.EL.btBack.style.display = "none");
             this.view.setReadOnly(false) ;
             this.view.elementsHavingAttribute("data-always-readonly").concat(this.view.elementsHavingAttribute("data-modify-readonly")).forEach(function(el){
                 el.setReadOnly(true) ;
