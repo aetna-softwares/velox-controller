@@ -530,7 +530,7 @@ VeloxFormController.prototype._onBtValidate = function(){
         var viewData = this.view.updateData(dataAfterModif) ;
         
         this.view.clearFormError() ;
-        this.checkInput(function(err, checkOk){
+        this.checkInput(viewData,function(err, checkOk){
             if(err){ return done(err); }
             if(!checkOk){
                 return done() ;
