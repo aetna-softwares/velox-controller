@@ -15,17 +15,12 @@
         if(!options.grid){ options.grid = {}; }
         if(!options.form){ options.form = {}; }
         
-        if(!options.grid.grid){
-            options.grid.grid = {} ;
+        if(options.grid.canCreate === undefined){
+            options.grid.canCreate = true;
         }
-        if(!options.grid.grid.show){
-            options.grid.grid.show = {
-                footer: true,
-                toolbar: true,
-                toolbarAdd: true
-            } ;
+        if(options.grid.canRefresh === undefined){
+            options.grid.canRefresh = true;
         }
-
 
         if(!options.grid.route){
             options.grid.route = table+"/list" ;
@@ -64,8 +59,8 @@
         this.viewGrid = this.gridController.view ;
 
         this.viewGrid.on("initDone", this._onInitDone.bind(this)) ;
-        this.viewGrid.on("openRecord", this._onOpenRecord.bind(this)) ;
-        this.viewGrid.on("addRecord", this._onAddRecord.bind(this)) ;
+        this.viewGrid.on("rowClick", this._onOpenRecord.bind(this)) ;
+        this.viewGrid.on("createNew", this._onCreateNew.bind(this)) ;
 
         this.viewForm = this.formController.view ;
         this.viewForm.on("back", this._onBackToGrid.bind(this)) ;
@@ -92,20 +87,20 @@
         }.bind(this)) ;
     } ;
 
-    VeloxGridAndFormController.prototype._onAddRecord = function(){
+    VeloxGridAndFormController.prototype._onCreateNew = function(){
         this.navigate( this.formRoute, null) ;
     } ;
 
     VeloxGridAndFormController.prototype._onInitDone = function(){
-        var gridEl = this.viewGrid.elementsHavingAttribute('data-field-def="'+this.table+'.grid"')[0];
-        if(gridEl){
-            gridEl.addEventListener("dblClick", function(ev){
-                this.viewGrid.emit("openRecord", ev.record) ;
-            }.bind(this)) ;
-            gridEl.addEventListener("add", function(){
-                this.viewGrid.emit("addRecord") ;
-            }.bind(this)) ;
-        }
+        // var gridEl = this.viewGrid.elementsHavingAttribute('data-field-def="'+this.table+'.grid"')[0];
+        // if(gridEl){
+        //     gridEl.addEventListener("dblClick", function(ev){
+        //         this.viewGrid.emit("openRecord", ev.record) ;
+        //     }.bind(this)) ;
+        //     gridEl.addEventListener("add", function(){
+        //         this.viewGrid.emit("addRecord") ;
+        //     }.bind(this)) ;
+        // }
     } ;
 
 

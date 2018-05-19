@@ -180,7 +180,7 @@
                 
                 if(htmlLower.indexOf("<form") === startIndex && htmlLower.lastIndexOf("</form>") === htmlLower.length-"</form>".length){
                     //just <form></form> element in the HTML, it is just the column customization
-                    formHTML=html.substring(html.indexOf(">", startIndex)+1, html.lastIndexOf("</")) ;
+                    formHTML=html.substring(startIndex) ;
                     html = "" ;
 
                     if(formHTML.toLowerCase().indexOf("data-form-buttons") !== -1){
@@ -572,7 +572,14 @@ VeloxFormController.prototype.checkRequired = function(view){
     return errors ;
 };
 
-VeloxFormController.prototype.checkInput = function(callback){
+VeloxFormController.prototype.checkInput = function(viewData, callback){
+
+    // if(ev.detail>1){ return ;} //ignore double clicks
+    //     if(view.EL.formPassword.checkValidity()){
+    //         view.emit("validate") ;
+    //     }
+    //     view.EL.formPassword.classList.add('was-validated');
+        
     var errors = [] ;
     var calls = [] ;
     var validations = this.validations.concat(this.view.validations||[]) ;

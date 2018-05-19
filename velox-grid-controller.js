@@ -127,6 +127,9 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
 
                 var tableHTML = scriptAndTable.tableHTML;
                 var script = scriptAndTable.script;
+                if(tableHTML){
+                    html = "" ;
+                }
                 
                 if(!html){
                     //no HTML
@@ -154,49 +157,59 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
                         }
                         this.viewOptions.grid.show.toolbar = true ;
                     }
-                    if(this.viewOptions.grid && this.viewOptions.grid.show){
-                        //there is grid show options in javascript, add them to table HTML
-                        var div = document.createElement('div');
-                        div.innerHTML = tableHTML;
-                        var thead = div.querySelector("thead") ;
-                        if(!thead){
-                            thead = document.createElement("thead") ;
-                            div.querySelector("table").appendChild(thead) ;
-                        }
-                        Object.keys(this.viewOptions.grid.show).forEach(function(k){
-                            if(!thead.hasAttribute(k)){//attribute not present, add it
-                                thead.setAttribute(k, ''+this.viewOptions.grid.show[k]) ;
-                            }
+                    var div = document.createElement('div');
+                    div.innerHTML = tableHTML;
+                    var thead = div.querySelector("thead") ;
+                    if(!thead){
+                        thead = document.createElement("thead") ;
+                        div.querySelector("table").appendChild(thead) ;
+                    }
+                    // Object.keys(this.viewOptions.grid.show).forEach(function(k){
+                    //     if(!thead.hasAttribute(k)){//attribute not present, add it
+                    //         thead.setAttribute(k, ''+this.viewOptions.grid.show[k]) ;
+                    //     }
+                    // }.bind(this)) ;
+                    var trToolbar;
+                    
+                    if(this.viewOptions.canRefresh){
+                        var trToolbar =  document.createElement("tr") ;
+                        trToolbar.setAttribute("data-toolbar", true) ;
+                        trToolbar.setAttribute("data-toolbar-prepend", true) ;
+                        thead.appendChild(trToolbar) ;
+                        var thToolbar = document.createElement("th") ;
+                        trToolbar.appendChild(thToolbar) ;
+                        thToolbar.innerHTML = VeloxWebView.tr?VeloxWebView.tr("form.refresh"):"Refresh";
+                        thToolbar.id = "refresh";
+                    }
+                    if(this.viewOptions.canCreate){
+                        var trToolbar =  document.createElement("tr") ;
+                        trToolbar.setAttribute("data-toolbar", true) ;
+                        thead.appendChild(trToolbar) ;
+                        var thToolbar = document.createElement("th") ;
+                        trToolbar.appendChild(thToolbar) ;
+                        thToolbar.innerHTML = VeloxWebView.tr?VeloxWebView.tr("form.create"):"New";
+                        thToolbar.id = "createNew";
+                    }
+                    if(this.viewOptions.filters){
+                        var trToolbar =  document.createElement("tr") ;
+                        trToolbar.setAttribute("data-toolbar", true) ;
+                        thead.appendChild(trToolbar) ;
+                        this.viewOptions.filters.forEach(function(filter){
+                            var thToolbar = document.createElement("th") ;
+                            trToolbar.appendChild(thToolbar) ;
+                            thToolbar.innerHTML = filter.label;
+                            thToolbar.id = "filter-"+filter.name;
+                            thToolbar.setAttribute("data-type", "check");
+                            Object.keys(filter).forEach(function(k){
+                                if(["label", "name"].indexOf(k) === -1){
+                                    thToolbar.setAttribute("data-"+k, filter[k]) ;
+                                }
+                            });
                         }.bind(this)) ;
-                        if(this.viewOptions.filters){
-                            var trToolbar = thead.querySelector("[data-toolbar]") ;
-                            if(!trToolbar){
-                                trToolbar = document.createElement("tr") ;
-                                trToolbar.setAttribute("data-toolbar", true) ;
-                                thead.appendChild(trToolbar) ;
-                                var thSpacer = document.createElement("th") ;
-                                thSpacer.setAttribute("data-type", "spacer") ;
-                                trToolbar.appendChild(thSpacer) ;
-                            }
-                            this.viewOptions.filters.forEach(function(filter){
-                                var thToolbar = document.createElement("th") ;
-                                trToolbar.appendChild(thToolbar) ;
-                                thToolbar.innerHTML = filter.label;
-                                thToolbar.id = "filter-"+filter.name;
-                                thToolbar.setAttribute("data-type", "check");
-                                Object.keys(filter).forEach(function(k){
-                                    if(["label", "name"].indexOf(k) === -1){
-                                        thToolbar.setAttribute("data-"+k, filter[k]) ;
-                                    }
-                                });
-                            }.bind(this)) ;
-                        }
-
-
-                        tableHTML = div.innerHTML ;
                     }
 
-                    
+
+                    tableHTML = div.innerHTML ;
 
                     html = script+'<div class="velox-grid-container">'+
                         '<h1>'+title+'</h1>'+
@@ -209,29 +222,29 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
             }.bind(this)) ;
         }.bind(this) ;
         this.view.getFilters = function(){
-            var items = this.viewOptions.filters;
-            if(this.view.initDone){
-                items = this.view.EL[this.table+"Grid"].toolbar.items ;
-                items.forEach(function(item){
-                    if(item.id.indexOf("filter-") === 0){
-                        item.name = item.id.substring(item.id.indexOf("-")+1) ;
-                    }
-                }) ;
-            }
+            // var items = this.viewOptions.filters;
+            // if(this.view.initDone){
+            //     items = this.view.EL[this.table+"Grid"].toolbar.items ;
+            //     items.forEach(function(item){
+            //         if(item.id.indexOf("filter-") === 0){
+            //             item.name = item.id.substring(item.id.indexOf("-")+1) ;
+            //         }
+            //     }) ;
+            // }
             var filters = [] ;
-            if(!items){ return filters; }
-            items.forEach(function(item){
-                if(item.name){
-                    if(item.checked){
-                        this.viewOptions.filters.some(function(f){
-                            if(f.name === item.name){
-                                filters.push(f) ;
-                                return true;
-                            }
-                        }) ;
-                    }
-                }
-            }.bind(this)) ;
+            // if(!items){ return filters; }
+            // items.forEach(function(item){
+            //     if(item.name){
+            //         if(item.checked){
+            //             this.viewOptions.filters.some(function(f){
+            //                 if(f.name === item.name){
+            //                     filters.push(f) ;
+            //                     return true;
+            //                 }
+            //             }) ;
+            //         }
+            //     }
+            // }.bind(this)) ;
             return filters;
         }.bind(this) ;
         this.view.on("displayed", function(){
@@ -239,23 +252,26 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
             this.view.EL[this.table+"Grid"].render() ;
         }.bind(this)) ;
         this.view.on("initDone", function(){
-            if(this.view.EL[this.table+"Grid"] && this.view.EL[this.table+"Grid"].toolbar){
-                this.view.EL[this.table+"Grid"].toolbar.on('click', function(event) {
-                    if(event.target.indexOf("filter-") === 0){
-                        event.onComplete = function(){
-                            this.view.emit("filterChanged", this.view.getFilters()) ;
-                        }.bind(this) ;
-                    }
-                    if(event.target === "w2ui-reload"){
-                        event.onComplete = function(){
-                            this.view.emit("reloadGrid") ;
-                        }.bind(this) ;
-                    }
-                }.bind(this)) ;
-            }
+            this.view.EL[this.table+"Grid"].addEventListener("rowClick", function(ev){
+                this.view.emit("rowClick", ev.rowData) ;
+            }.bind(this)) ;
+            // if(this.view.EL[this.table+"Grid"] && this.view.EL[this.table+"Grid"].toolbar){
+            //     this.view.EL[this.table+"Grid"].toolbar.on('click', function(event) {
+            //         if(event.target.indexOf("filter-") === 0){
+            //             event.onComplete = function(){
+            //                 this.view.emit("filterChanged", this.view.getFilters()) ;
+            //             }.bind(this) ;
+            //         }
+            //         if(event.target === "w2ui-reload"){
+            //             event.onComplete = function(){
+            //                 this.view.emit("reloadGrid") ;
+            //             }.bind(this) ;
+            //         }
+            //     }.bind(this)) ;
+            // }
         }.bind(this)) ;
         this.view.on("filterChanged", this.refresh.bind(this)) ;
-        this.view.on("reloadGrid", this.refresh.bind(this)) ;
+        this.view.on("refresh", this.refresh.bind(this)) ;
     } ;
 
     VeloxGridController.prototype.prepareDataOnEnter = function(data, callback){
