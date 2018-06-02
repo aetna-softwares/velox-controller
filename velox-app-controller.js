@@ -686,7 +686,7 @@
             this._checkActiveRoutes(newRoutes, interc, currentPosition, function(err){
                 if(err){ throw "Error while checking routes "+(err instanceof Error ?err.stack:JSON.stringify(err)) ;}
 
-                this._openNewRoutes(addedRoutes, currentPosition, function(err){
+                this._openNewRoutes(addedRoutes, stackedRoutes, currentPosition, function(err){
                     if(err){ throw "Error while opening routes "+(err instanceof Error ?err.stack:JSON.stringify(err)) ;}
 
                     this._stackRoutes(stackedRoutes, function(err){
@@ -845,7 +845,7 @@
     /**
      * open new routes
      */
-    VeloxAppController.prototype._openNewRoutes = function(newRoutes, currentPosition, callback){
+    VeloxAppController.prototype._openNewRoutes = function(newRoutes, stackedRoutes, currentPosition, callback){
         if(newRoutes.length === 0){
             return callback() ;//finished
         }
@@ -853,11 +853,17 @@
 
         var next = function next(err){
             if(err){ return callback(err); }
-            this._openNewRoutes(newRoutes.slice(1), currentPosition, callback) ;
+            this._openNewRoutes(newRoutes.slice(1), stackedRoutes, currentPosition, callback) ;
         }.bind(this) ;
 
         route.def.active = true ;
         this._callListener(route, "listenerEnter", next) ;
+        var indexStacked = stackedRoutes.indexOf(route) ;
+        if(indexStacked !== -1){
+            //this route is open but immediatly stacked, call the stack in the open process to avoid display to user
+            var routesToStack = stackedRoutes.splice(indexStacked, 1) ;
+            this._stackRoutes(routesToStack, function(){}) ;
+        }
     } ;
 
     VeloxAppController.prototype._callListener = function(route, listenerName, callback){
