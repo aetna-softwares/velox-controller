@@ -28,6 +28,7 @@
      * @typedef VeloxFormControllerOptionLabels
      * @type {object}
      * @property {string} [confirmDelete] message to display on confirm delete (default translation of "form.confirmDelete" or "Are you sure to delete ?" if no i18n
+     * @property {string} [cantDelete] message to display on can't delete (default translation of "form.cantDelete" or "Can't delete this element because it is already used" if no i18n
      * @property {string} [back] button back label (default translation of "form.back" or "Back" if no i18n
      * @property {string} [create] button create label (default translation of "form.create" or "Create" if no i18n
      * @property {string} [modify] button modify label (default translation of "form.modify" or "Modify" if no i18n
@@ -85,6 +86,9 @@
         }
         if(!options.labels.confirmDelete){
             options.labels.confirmDelete = VeloxWebView.tr?VeloxWebView.tr("form.confirmDelete"):"Are you sure to delete ?" ;
+        }
+        if(!options.labels.cantDelete){
+            options.labels.cantDelete = VeloxWebView.tr?VeloxWebView.tr("form.cantDelete"):"Can't delete this element because it is already used" ;
         }
         if(!options.labels.back){
             options.labels.back = VeloxWebView.tr?VeloxWebView.tr("form.back"):"Back" ;
@@ -692,6 +696,50 @@
     };
 
     /**
+     * Check if the record can be deleted
+     * 
+     * The default behaviour is to check foreign keys
+     * 
+     * @param {object} record The record to delete
+     * @param {function} callback 
+     */
+    VeloxFormController.prototype.checkBeforeDelete = function(record, callback){
+        var schema = VeloxWebView.fieldsSchema.getSchema();
+        var multiread = {} ;
+        Object.keys(schema).forEach(function(t){
+            if(schema[t].fk){
+                for(var y=0; y<schema[t].fk.length; y++){
+                    var fk = schema[t].fk[y] ;
+                    if(fk.targetTable === this.table){
+                        var s = {} ;
+                        s[fk.thisColumn] = record[fk.targetColumn] ;
+                        multiread[t+"_"+fk.thisColumn] = { table: t, searchFirst: s } ;
+                    }
+                }
+            }
+        }.bind(this)) ;
+        this.api.__velox_database.multiread(multiread, function(err, reads){
+            if(err){ return callback(err) ;}
+            var isUsed = Object.keys(reads).some(function(k){
+                return !!reads[k] ;
+            }) ;
+            callback(null, isUsed) ;
+        }) ;
+    };
+    
+    /**
+     * Get the records to delete
+     * 
+     * The default behaviour is to delete the current record
+     * 
+     * @param {object} record The record to delete
+     * @param {function} callback 
+     */
+    VeloxFormController.prototype.getRecordsToDelete = function(record, callback){
+        callback(null, [{action : "remove", table: this.table, record: record}]) ;
+    };
+
+    /**
      * Delete the record 
      * 
      * By default it use the Velox Database API to delete in database. If you don't want to use this, override this to do your own delete
@@ -703,7 +751,16 @@
         if(!this.api || !this.api.__velox_database){
             return callback("No Velox Database API found, provide it or implement deleteRecord on your form controller") ;
         }
-        this.api.__velox_database[this.table].remove(record, callback) ;
+        this.checkBeforeDelete(record, function(err, isUsed){
+            if(err){ return callback(err) ;}
+            if(isUsed){
+                return callback(this.viewOptions.labels.cantDelete) ;
+            }
+            this.getRecordsToDelete(record, function(err, changes){
+                if(err){ return callback(err) ;}
+                this.api.__velox_database.transactionalChanges(changes, callback) ;
+            }.bind(this)) ;
+        }.bind(this)) ;
     } ;
 
     VeloxFormController.prototype._onBtDelete = function(){
