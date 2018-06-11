@@ -269,7 +269,7 @@
 
                 var titleHTML = this.viewOptions.titleHTML || VeloxFormController.globalsOptions.titleHTML ;
                 if(!titleHTML){
-                    titleHTML = '<h1>'+title+'</h1>' ;
+                    titleHTML = '<h1 class="velox-form-title">'+title+'</h1>' ;
                 }
 
                 html = html.replace("$FORM_TITLE", titleHTML) ;
