@@ -194,7 +194,7 @@
                     }else if(indexHeader === startIndex){
                         //having <style> but no <script>
                         var newStartIndex = htmlLower.indexOf("<", htmlLower.indexOf("</header>", startIndex)+"</header>".length, startIndex) ;
-                        header += html.substring(startIndex, newStartIndex) ;
+                        header += html.substring(htmlLower.indexOf(">", indexHeader)+1, htmlLower.indexOf("</header>", indexHeader)) ;
                         startIndex = newStartIndex;
                     }else{
                         break;
@@ -451,21 +451,22 @@
                     //this table is not a sub table, assume that it is fetch for information only
                     return false;
                 }
-                if(join.otherTable && viewData[join.name]){
+                var name = join.name||join.otherTable ;
+                if(join.otherTable && viewData[name]){
                     if(join.type === "2many"){
-                        if(Array.isArray(viewData[join.name])){
+                        if(Array.isArray(viewData[name])){
 
-                            viewData[join.name].forEach(function(r){
+                            viewData[name].forEach(function(r){
                                 r[otherColumn] = viewData[thisColumn] ;
                                 prepareRecord(schema, join.otherTable, r) ;
                                 recordsToSave.push({table: join.otherTable, record : r}) ;
                             }.bind(this)) ;
 
-                            if(dataBeforeModif[join.name] && Array.isArray(dataBeforeModif[join.name])){
+                            if(dataBeforeModif[name] && Array.isArray(dataBeforeModif[name])){
                                 //search records removed
-                                dataBeforeModif[join.name].forEach(function(oldRecord){
+                                dataBeforeModif[name].forEach(function(oldRecord){
                                     //check if still exists in new data
-                                    var stillExists = viewData[join.name].some(function(r){
+                                    var stillExists = viewData[name].some(function(r){
                                         return schema[join.otherTable].pk.every(function(pk){
                                             return r[pk] === oldRecord[pk] ;
                                         }) ;
@@ -478,18 +479,18 @@
                             
 
                         }else{
-                            callback("join 2many expect an array object in "+join.name) ;
+                            callback("join 2many expect an array object in "+name) ;
                             return true;
                         }
                     }else if (join.type === "2one"){
-                        viewData[join.name][otherColumn] = viewData[thisColumn] ;
-                        prepareRecord(schema, join.otherTable, viewData[join.name]) ;
-                        recordsToSave.push({table: join.otherTable, record : viewData[join.name]}) ;
+                        viewData[name][otherColumn] = viewData[thisColumn] ;
+                        prepareRecord(schema, join.otherTable, viewData[name]) ;
+                        recordsToSave.push({table: join.otherTable, record : viewData[name]}) ;
                     }else{
                         callback("join type should be 2one or 2many") ;
                         return true;
                     }
-                    delete viewData[join.name] ;
+                    delete viewData[name] ;
                 }
             }.bind(this)) ;
             if(!hasError){
@@ -646,7 +647,10 @@
             var invalids = this.view.EL.mainForm.querySelectorAll(":invalid") ;
             for(var i=0; i<invalids.length; i++){
                 var invalidEl = invalids[i] ;
-                invalidEl.setCustomValidity("");
+                if(invalidEl.isManualError){
+                    delete invalidEl.isManualError ;
+                    invalidEl.setCustomValidity("");
+                }
             }
 
             var globalErrors = [] ;
@@ -656,6 +660,7 @@
                     var elField = this.view.EL.mainForm.querySelector('[data-field-def="'+error.field+'"] input') ;
                     if(elField){
                         elField.setCustomValidity(error.msg);
+                        elField.isManualError = true ;
                     }else{
                         globalErrors.push(error) ;
                     }
