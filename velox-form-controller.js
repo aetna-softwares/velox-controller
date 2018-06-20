@@ -24,6 +24,22 @@
         }
     } ;
 
+    //closest polyfill
+    if (!Element.prototype.matches)
+        Element.prototype.matches = Element.prototype.msMatchesSelector || 
+                                Element.prototype.webkitMatchesSelector;
+
+    if (!Element.prototype.closest)
+        Element.prototype.closest = function(s) {
+            var el = this;
+            if (!document.documentElement.contains(el)) return null;
+            do {
+                if (el.matches(s)) return el;
+                el = el.parentElement || el.parentNode;
+            } while (el !== null); 
+            return null;
+        };
+
     /**
      * @typedef VeloxFormControllerOptionLabels
      * @type {object}
@@ -342,6 +358,8 @@
                 el.setReadOnly(true) ;
             }) ;
         }
+        this.view.viewRootEl.className = this.view.viewRootEl.className.replace(/form-mode-.*/g, "") ;
+        this.view.viewRootEl.className += " form-mode-"+mode ;
         Array.prototype.slice.apply(this.view.container.querySelectorAll("[data-form-show]")).forEach(function(showEl){
             var attrShow = showEl.getAttribute("data-form-show") ;
             if(attrShow){
@@ -622,17 +640,29 @@
                     //with callback
                     validation(viewData, function(err, detectedErrors){
                         if(err){ return cb(err) ;}
+                        if(!detectedErrors){ detectedErrors = [] ;}
                         if(detectedErrors && !Array.isArray(detectedErrors)){
                             detectedErrors = [detectedErrors];
                         }
+                        detectedErrors.forEach(function(e, i){
+                            if(typeof(e) === "string"){
+                                detectedErrors[i]= {msg : e} ;
+                            }
+                        }) ;
                         errors = errors.concat(detectedErrors||[]) ;
                         cb() ;
                     }) ;
                 }else{
                     var detectedErrors = validation(viewData);
+                    if(!detectedErrors){ detectedErrors = [] ;}
                     if(detectedErrors && !Array.isArray(detectedErrors)){
                         detectedErrors = [detectedErrors];
                     }
+                    detectedErrors.forEach(function(e, i){
+                        if(typeof(e) === "string"){
+                            detectedErrors[i]= {msg : e} ;
+                        }
+                    }) ;
                     errors = errors.concat(detectedErrors||[]) ;
                     cb() ;
                 }
@@ -675,11 +705,12 @@
             for(var i=0; i<invalids.length; i++){
                 var invalidEl = invalids[i] ;
                 var message = invalidEl.validationMessage ;
-                var parentEl = invalidEl.parentElement ;
-                var feedbackEl = parentEl.querySelector(".invalid-feedback") ;
-                if(feedbackEl){
-                    feedbackEl.innerHTML = message ;
-                }else{
+                if(message){
+                    var parentEl = invalidEl.closest("[data-bind]") ;
+                    var feedbackEl = parentEl.querySelector(".invalid-feedback") ;
+                    if(feedbackEl){
+                        feedbackEl.innerHTML = message ;
+                    }
                     var label = parentEl.getAttribute("data-field-label") ;
                     globalErrors.push({
                         el: parentEl,
@@ -692,7 +723,7 @@
             }
 
             if(globalErrors.length > 0){
-                var msg = globalErrors.map(function(e){ return "<p>"+e.msg+"</p>" ;}) ;
+                var msg = globalErrors.map(function(e){ return "<p>"+e.msg+"</p>" ;}).join("\n") ;
                 this.view.formError(msg) ;
             }
             callback(null, formValidity&&errors.length === 0) ;
@@ -811,8 +842,21 @@
         this.setMode(this.mode) ;
     }
 
-    VeloxFormController.prototype.refresh = function(callback){
-        this.enter(this.currentRecord, callback) ;
+    VeloxFormController.prototype.refresh = function(data, callback){
+        if(typeof(data) === "function"){
+            callback = data;
+            data = null;
+        }
+        if(!data){
+            data = this.currentRecord ;
+        }
+        if(!callback){
+            callback = new function(){} ;
+        }
+        this.enter(this.currentRecord, function(err){
+            if(err){ callback(err) ;}
+            callback() ;
+        }) ;
     } ;
 
 
