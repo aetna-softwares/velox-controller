@@ -275,6 +275,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
     } ;
 
     VeloxGridController.prototype.prepareDataOnEnter = function(data, callback){
+        this.routeData = data ;
         this.searchRecords(function(err, results){
             if(err){ return callback(err); }
             callback(null, {results: results}) ;
