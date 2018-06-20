@@ -539,6 +539,8 @@
         }) ;
     }
 
+    VeloxFormController.prototype.prepareRecord = prepareRecord ;
+
     /**
      * Save the record on validation.
      * 
@@ -590,6 +592,7 @@
                 if(!checkOk){
                     return done() ;
                 }
+                this.view.EL.mainForm.classList.remove('was-validated');
                 this.getRecordsToSave(viewData, dataBeforeModif, function(err, recordsToSave){
                     if(err){ return done(err) ;}
 
@@ -851,7 +854,7 @@
             data = this.currentRecord ;
         }
         if(!callback){
-            callback = new function(){} ;
+            callback = function(){} ;
         }
         this.enter(this.currentRecord, function(err){
             if(err){ callback(err) ;}
