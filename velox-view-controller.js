@@ -251,6 +251,12 @@
                             this.view.render(data);
                             this.emit("enter", done) ;
                         }.bind(this));
+                        this.view.once("close", function(){
+                            var currentRoutes = this.appController._getRoutes(this.appController.currentRoute) ;
+                            if(currentRoutes.length > 0 && currentRoutes[currentRoutes.length-1].route === this.viewOptions.route){
+                                this.navigate("..") ;
+                            }
+                        }.bind(this)) ;
                     }else{
                         this.view.open(data, function(err){
                             if(err){ return done(err); }
