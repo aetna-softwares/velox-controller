@@ -591,6 +591,16 @@
     } ;
 
     /**
+     * Set the current route without triggering a navigation
+     * 
+     * @param {string} currentRoute the current route
+     */
+    VeloxAppController.prototype.setCurrentRoute = function(currentRoute){
+        this.currentRoute = currentRoute ;
+        history.pushState(null, "", currentRoute);
+    } ;
+
+    /**
      * Called when browser change URL
      * 
      * @private
@@ -679,13 +689,17 @@
             }
         }.bind(this)) ;
     
+        var previousPosition = this.currentRoute ;
         this.currentRoute = currentPosition ;
-        this._removeOldRoutes(removedRoutes, function(err){
-            if(err){ throw "Error while leaving routes "+(err instanceof Error ?err.stack:JSON.stringify(err)) ;}
 
-            this._checkActiveRoutes(newRoutes, interc, currentPosition, function(err){
-                if(err){ throw "Error while checking routes "+(err instanceof Error ?err.stack:JSON.stringify(err)) ;}
-
+        this._runInterceptor(interc.slice(), { 
+            currentPosition : currentPosition, previousPosition: previousPosition,
+            removedRoutes: removedRoutes, stackedRoutes: stackedRoutes,
+            addedRoutes: addedRoutes, unstackedRoutes: unstackedRoutes, modifiedRoutes: modifiedRoutes,
+        }, function(err){
+            if(err){ throw "Error while running interceptor "+(err instanceof Error ?err.stack:JSON.stringify(err)) ;}
+            this._removeOldRoutes(removedRoutes, function(err){
+                if(err){ throw "Error while leaving routes "+(err instanceof Error ?err.stack:JSON.stringify(err)) ;}
                 this._openNewRoutes(addedRoutes, stackedRoutes, currentPosition, function(err){
                     if(err){ throw "Error while opening routes "+(err instanceof Error ?err.stack:JSON.stringify(err)) ;}
 
@@ -713,6 +727,7 @@
                 }.bind(this)) ;
             }.bind(this)) ;
         }.bind(this)) ;
+
     } ;
 
 
@@ -822,25 +837,7 @@
     } ;
 
 
-    /**
-     * open new routes
-     */
-    VeloxAppController.prototype._checkActiveRoutes = function(activeRoutes, interceptors, currentPosition, callback){
-        if(activeRoutes.length === 0){
-            return callback() ;//finished
-        }
-        var route = activeRoutes[0] ;
-
-        var next = function next(err){
-            if(err){ return callback(err); }
-            this._checkActiveRoutes(activeRoutes.slice(1), interceptors, currentPosition, callback) ;
-        }.bind(this) ;
-
-
-        this._runInterceptor(interceptors.slice(), currentPosition, route, function(){
-            next() ;
-        }.bind(this)) ;
-    } ;
+   
 
     /**
      * open new routes
@@ -890,20 +887,18 @@
      * 
      * @private
      */
-    VeloxAppController.prototype._runInterceptor = function(interceptors, currentPosition, route, callback){
+    VeloxAppController.prototype._runInterceptor = function(interceptors, context, callback){
         if(interceptors.length === 0){
             return callback() ;//finished
         }
         var inter = interceptors[0] ;
 
         var next = function next(){
-            this._runInterceptor(interceptors.slice(1), currentPosition, route, callback) ;
+            this._runInterceptor(interceptors.slice(1), context, callback) ;
         }.bind(this) ;
 
-        var args = [currentPosition, route, next] ;
-        if(inter.listener.length === 2){
-            args = [currentPosition, next] ;
-        }else if(inter.listener.length === 1){
+        var args = [context, next] ;
+        if(inter.listener.length === 1){
             args = [next] ;
         }
         inter.listener.apply(null, args) ;
