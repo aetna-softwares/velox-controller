@@ -108,8 +108,7 @@
             return callback() ;
         }
         var calls = [] ;
-        for (var i = 0; i < listeners.length; i++) {
-            var listener = listeners[i];
+        listeners.forEach(function(listener){
             calls.push(function(cb){
                 if(listener.length <= 1){
                     try{
@@ -122,7 +121,7 @@
                     listener({ type: type, data: data }, cb);
                 }
             }) ;
-        }
+        }) ;
 
         series(calls, callback) ;
     };
