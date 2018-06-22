@@ -714,7 +714,7 @@
                     if(feedbackEl){
                         feedbackEl.innerHTML = message ;
                     }
-                    var label = parentEl.getAttribute("data-field-label") ;
+                    var label = parentEl.getAttribute("data-field-label-error")||parentEl.getAttribute("data-field-label") ;
                     globalErrors.push({
                         el: parentEl,
                         field: parentEl.getAttribute("data-bind"),
