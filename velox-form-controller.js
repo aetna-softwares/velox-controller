@@ -598,12 +598,23 @@
 
                     this.saveRecords(recordsToSave, function(err, savedRecord){
                         if(err){ return done(err) ;}
-                        this.currentRecord = savedRecord ;
-                        this.refresh() ;
-                        // this._toggleListAuto(false);
-                        // this.view.render(savedRecord) ;
-                        // this.setMode("read") ;
-                        done() ;
+                        if(this.mode === "create"){
+                            if(this.api && this.api.__velox_database){
+                                this.api.__velox_database[this.table].getPk(savedRecord, function(err, pk){
+                                    if(err){ return done(err) ;}
+                                    this.updateRouteData(this.viewOptions.route, pk)
+                                    done() ;
+                                }.bind(this)) ;
+                            }else{
+                                this.currentRecord = savedRecord ;
+                                this.navigate(this.viewOptions.route, savedRecord, "anonymous") ;
+                                done() ;
+                            }
+                        }else{
+                            this.currentRecord = savedRecord ;
+                            this.refresh() ;
+                            done() ;
+                        }
                     }.bind(this)) ;
                 }.bind(this)) ;
             }.bind(this)) ;
