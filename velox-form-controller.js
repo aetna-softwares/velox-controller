@@ -580,43 +580,57 @@
         }.bind(this)) ;
     } ;
 
+
+
+    VeloxFormController.prototype.doValidate = function(done){
+        var dataBeforeModif = JSON.parse(JSON.stringify(this.view.getBoundObject())) ;
+        var dataAfterModif = JSON.parse(JSON.stringify(dataBeforeModif)) ;
+        var viewData = this.view.updateData(dataAfterModif) ;
+        
+        this.view.clearFormError() ;
+        this.checkInput(viewData,function(err, checkOk){
+            if(err){ return done(err); }
+            if(!checkOk){
+                return done(null, false) ;
+            }
+            this.view.EL.mainForm.classList.remove('was-validated');
+            this.getRecordsToSave(viewData, dataBeforeModif, function(err, recordsToSave){
+                if(err){ return done(err) ;}
+
+                this.saveRecords(recordsToSave, function(err, savedRecord){
+                    if(err){ return done(err) ;}
+                    done(null, savedRecord) ;
+                }.bind(this)) ;
+            }.bind(this)) ;
+        }.bind(this)) ;
+    };
+
     VeloxFormController.prototype._onBtValidate = function(){
         this.view.longTask(function(done){
-            var dataBeforeModif = JSON.parse(JSON.stringify(this.view.getBoundObject())) ;
-            var dataAfterModif = JSON.parse(JSON.stringify(dataBeforeModif)) ;
-            var viewData = this.view.updateData(dataAfterModif) ;
-            
-            this.view.clearFormError() ;
-            this.checkInput(viewData,function(err, checkOk){
+
+            this.doValidate(function(err, savedRecord){
                 if(err){ return done(err); }
-                if(!checkOk){
+                if(!savedRecord){
+                    //check failed
                     return done() ;
                 }
-                this.view.EL.mainForm.classList.remove('was-validated');
-                this.getRecordsToSave(viewData, dataBeforeModif, function(err, recordsToSave){
-                    if(err){ return done(err) ;}
-
-                    this.saveRecords(recordsToSave, function(err, savedRecord){
-                        if(err){ return done(err) ;}
-                        if(this.mode === "create"){
-                            if(this.api && this.api.__velox_database){
-                                this.api.__velox_database[this.table].getPk(savedRecord, function(err, pk){
-                                    if(err){ return done(err) ;}
-                                    this.updateRouteData(this.viewOptions.route, pk)
-                                    done() ;
-                                }.bind(this)) ;
-                            }else{
-                                this.currentRecord = savedRecord ;
-                                this.navigate(this.viewOptions.route, savedRecord, "anonymous") ;
-                                done() ;
-                            }
-                        }else{
-                            this.currentRecord = savedRecord ;
-                            this.refresh() ;
+                if(this.mode === "create"){
+                    if(this.api && this.api.__velox_database){
+                        this.api.__velox_database[this.table].getPk(savedRecord, function(err, pk){
+                            if(err){ return done(err) ;}
+                            this.updateRouteData(this.viewOptions.route, pk)
                             done() ;
-                        }
-                    }.bind(this)) ;
-                }.bind(this)) ;
+                        }.bind(this)) ;
+                    }else{
+                        this.currentRecord = savedRecord ;
+                        this.navigate(this.viewOptions.route, savedRecord, "anonymous") ;
+                        done() ;
+                    }
+                }else{
+                    this.currentRecord = savedRecord ;
+                    this.refresh() ;
+                    done() ;
+                }
             }.bind(this)) ;
         }.bind(this)) ;
     };
