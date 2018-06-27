@@ -559,12 +559,13 @@
                 if(r.route === routeDestName){
                     var data = r.defaultData;
                     if(dataId){
+                        dataId = decodeURIComponent(dataId);
                         if(dataId[0] === "£"){
                             //start by $, it is an id in data map (anonymous data)
                             data = r.mapData[dataId] ;
                         }else{
                             //it is urlEncoded data
-                            var data = decodeURIComponent(dataId);
+                            var data = dataId;
                             if(data.length > 0 && ['"', '[', '{'].indexOf(data[0]) !== -1){
                                 data = JSON.parse(data) ;
                             }
