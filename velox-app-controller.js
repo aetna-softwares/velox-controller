@@ -1,3 +1,4 @@
+/*global define*/
 ; (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
         typeof define === 'function' && define.amd ? define(factory) :
@@ -9,7 +10,7 @@
     function uuidv4() {
         if(typeof(window.crypto) !== "undefined" && crypto.getRandomValues){
             return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, function(c) {
-                return (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+                return (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16);
             }) ;
         }else{
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -333,16 +334,16 @@
         var currentPosition = this._currentPosition() ;
         if(destination === ".."){
             //move back
-            var lastHashIndex = currentPosition.lastIndexOf("#") ;
-            if(lastHashIndex === -1){
-                location.hash = "" ;
-            }else{
-                var newPosition = currentPosition.substring(0, lastHashIndex) ;
-                if(newPosition[0] === "#"){
-                    newPosition = newPosition.substring(1) ;
-                }
-                location.hash = newPosition ;
+            var currentRoutes = this._getRoutes(this._currentPosition());
+            if(currentRoutes.length > 0){
+                currentRoutes.pop() ;
             }
+            if(data !== undefined && currentRoutes.length>0){
+                currentRoutes[currentRoutes.length -1].data = data;
+                currentRoutes[currentRoutes.length -1].dataMode = dataMode;
+            }
+            currentRoutes[0].route = "/"+currentRoutes[0].route ;
+            this.navigate(currentRoutes) ;
             return;
         }
 
@@ -369,45 +370,7 @@
 
         var previousRouteAddr = null;
         destination.forEach(function(routeDestination){
-            dataMode = routeDestination.dataMode ;
-            if(!dataMode){
-                dataMode = this.dataMode ;
-            }
-            //move to an existing route
-            var routeAddr = routeDestination.route?"#!"+routeDestination.route:"" ;
-            if(routeDestination.data){
-                var dataId = "" ;
-                var dataStr = routeDestination.data ;
-                if(typeof(dataStr) !== "string" && typeof(dataStr) != "number"){
-                    dataStr = JSON.stringify(routeDestination.data) ;
-                }
-                var mapKey = null;
-                this.routes.forEach(function(route){
-                    if(route.route === routeDestination.route){
-                        if(dataStr !== JSON.stringify(route.defaultData)){
-                            //given data is different from default data
-                            if(dataMode === "bookmarkable"){
-                                //bookmarkable mode, use the serialized object
-                                dataId = "$"+encodeURIComponent(dataStr) ;
-                            }else{
-                                Object.keys(route.mapData).some(function(k){
-                                    if(dataStr === JSON.stringify(route.mapData[k])){
-                                        mapKey = k ;
-                                        return true ;
-                                    }
-                                }) ;
-                                if(!mapKey){
-                                    //not found in map
-                                    mapKey = "£"+uuidv4() ;
-                                    route.mapData[mapKey] = data ;
-                                }
-                                dataId = "$"+mapKey ;
-                            }
-                        }
-                    }
-                }.bind(this)) ;
-                routeAddr += dataId ;
-            }
+            var routeAddr = this._formatDestinationToUrl(routeDestination, data) ;
             if(previousRouteAddr !== routeAddr){
                 path += routeAddr ;                
             }
@@ -419,6 +382,49 @@
             return this.onNavigate(); //no destination given, just execute route
         }
         location.hash = path ;    
+    } ;
+
+    VeloxAppController.prototype._formatDestinationToUrl = function(routeDestination, data){
+        var dataMode = routeDestination.dataMode ;
+        if(!dataMode){
+            dataMode = this.dataMode ;
+        }
+        //move to an existing route
+        var routeAddr = routeDestination.route?"#!"+routeDestination.route:"" ;
+        if(routeDestination.data){
+            var dataId = "" ;
+            var dataStr = routeDestination.data ;
+            if(typeof(dataStr) !== "string" && typeof(dataStr) != "number"){
+                dataStr = JSON.stringify(routeDestination.data) ;
+            }
+            var mapKey = null;
+            this.routes.forEach(function(route){
+                if(route.route === routeDestination.route){
+                    if(dataStr !== JSON.stringify(route.defaultData)){
+                        //given data is different from default data
+                        if(dataMode === "bookmarkable"){
+                            //bookmarkable mode, use the serialized object
+                            dataId = "$"+encodeURIComponent(dataStr) ;
+                        }else{
+                            Object.keys(route.mapData).some(function(k){
+                                if(dataStr === JSON.stringify(route.mapData[k])){
+                                    mapKey = k ;
+                                    return true ;
+                                }
+                            }) ;
+                            if(!mapKey){
+                                //not found in map
+                                mapKey = "£"+uuidv4() ;
+                                route.mapData[mapKey] = data ;
+                            }
+                            dataId = "$"+mapKey ;
+                        }
+                    }
+                }
+            }.bind(this)) ;
+            routeAddr += dataId ;
+        }
+        return routeAddr ;
     } ;
 
     /**
@@ -433,10 +439,12 @@
      * app.updateRouteData("bar", 3) ;
      * // the current position is #foo$1#bar$3
      * 
+     * @param {string} [newPosition] new URL position (if not givent the current URL is not modified)
      * @param {string} routeName the name of route to modify
      * @param {*} newData the new data value
      */
     VeloxAppController.prototype.updateRouteData = function(routeName, newData){
+        
         var currentRoutes = this._getRoutes(this._currentPosition());
         var found = false;
         currentRoutes.forEach(function(r){
