@@ -1,3 +1,4 @@
+/*global define*/
 ; (function (global, factory) {
 if (typeof exports === 'object' && typeof module !== 'undefined') {
     var VeloxViewController = require("velox-controller").ViewController ;
@@ -331,11 +332,13 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
 
 
     //TODO : refresh only the modified line and keep grid status
-    // VeloxGridController.prototype.unstack = function(){
-    //     this.emit("beforeUnstack") ;
-    //     this.view.show();
-    //     this.emit("unstack") ;
-    // } ;
+    VeloxGridController.prototype.unstack = function(data){
+        this.emit("beforeUnstack") ;
+        this.refresh(data, function(){
+            this.view.show();
+            this.emit("unstack") ;
+        }.bind(this)) ;
+    } ;
 
 
     return VeloxGridController ;

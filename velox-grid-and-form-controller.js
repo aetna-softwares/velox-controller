@@ -1,3 +1,4 @@
+/*global define*/
 ; (function (global, factory) {
     if (typeof exports === 'object' && typeof module !== 'undefined') {
         var VeloxViewController = require("velox-controller").ViewController ;

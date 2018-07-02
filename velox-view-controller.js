@@ -1,3 +1,4 @@
+/*global define, VeloxWebView*/
 ; (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
         typeof define === 'function' && define.amd ? define(factory) :
@@ -333,11 +334,9 @@
     /**
      * show the view (add to the DOM)
      */
-    VeloxViewController.prototype.unstack = function(data){
+    VeloxViewController.prototype.unstack = function(/*data*/){
         this.emit("beforeUnstack") ;
-        this.refresh(data, function(){
-            this.view.show();
-        }.bind(this)) ;
+        this.view.show();
         this.emit("unstack") ;
     } ;
 

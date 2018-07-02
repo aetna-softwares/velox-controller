@@ -1,3 +1,4 @@
+/*global define*/
 ; (function (global, factory) {
     if (typeof exports === 'object' && typeof module !== 'undefined') {
         var VeloxViewController = require("velox-controller").ViewController ;
@@ -14,7 +15,7 @@
     var uuidv4 = function(){
         if(typeof(window.crypto) !== "undefined" && crypto.getRandomValues){
             return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, function(c) {
-                return (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+                return (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16) ;
             }) ;
         }else{
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -618,7 +619,7 @@
                     if(this.api && this.api.__velox_database){
                         this.api.__velox_database[this.table].getPk(savedRecord, function(err, pk){
                             if(err){ return done(err) ;}
-                            this.updateRouteData(this.viewOptions.route, pk)
+                            this.updateRouteData(this.viewOptions.route, pk);
                             done() ;
                         }.bind(this)) ;
                     }else{
