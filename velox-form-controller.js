@@ -589,12 +589,12 @@
         var viewData = this.view.updateData(dataAfterModif) ;
         
         this.view.clearFormError() ;
-        this.checkInput(viewData,function(err, checkOk){
+        this.view.checkForm(this.view.EL.mainForm, this.validations,function(err, checkOk){
             if(err){ return done(err); }
             if(!checkOk){
                 return done(null, false) ;
             }
-            this.view.EL.mainForm.classList.remove('was-validated');
+            this.view.EL.mainForm.className = this.view.EL.mainForm.className.replace(/ was\-validated/g, "");
             this.getRecordsToSave(viewData, dataBeforeModif, function(err, recordsToSave){
                 if(err){ return done(err) ;}
 
@@ -654,110 +654,6 @@
             }
         }
         return errors ;
-    };
-
-    VeloxFormController.prototype.checkInput = function(viewData, callback){
-
-        this.view.EL.mainForm.classList.add('was-validated');
-
-        var errors = [] ;
-        var calls = [] ;
-        var validations = this.validations.concat(this.view.validations||[]) ;
-        validations.forEach(function(validation){
-            calls.push(function(cb){
-                if(validation.length === 2){
-                    //with callback
-                    validation(viewData, function(err, detectedErrors){
-                        if(err){ return cb(err) ;}
-                        if(!detectedErrors){ detectedErrors = [] ;}
-                        if(detectedErrors && !Array.isArray(detectedErrors)){
-                            detectedErrors = [detectedErrors];
-                        }
-                        detectedErrors.forEach(function(e, i){
-                            if(typeof(e) === "string"){
-                                detectedErrors[i]= {msg : e} ;
-                            }
-                        }) ;
-                        errors = errors.concat(detectedErrors||[]) ;
-                        cb() ;
-                    }) ;
-                }else{
-                    var detectedErrors = validation(viewData);
-                    if(!detectedErrors){ detectedErrors = [] ;}
-                    if(detectedErrors && !Array.isArray(detectedErrors)){
-                        detectedErrors = [detectedErrors];
-                    }
-                    detectedErrors.forEach(function(e, i){
-                        if(typeof(e) === "string"){
-                            detectedErrors[i]= {msg : e} ;
-                        }
-                    }) ;
-                    errors = errors.concat(detectedErrors||[]) ;
-                    cb() ;
-                }
-            }.bind(this)) ;
-        }.bind(this)) ;
-
-
-        
-        VeloxWebView._asyncSeries(calls, function(err){
-            if(err){ return callback(err) ;}
-
-            var invalids = this.view.EL.mainForm.querySelectorAll(":invalid") ;
-            for(var i=0; i<invalids.length; i++){
-                var invalidEl = invalids[i] ;
-                if(invalidEl.isManualError){
-                    delete invalidEl.isManualError ;
-                    invalidEl.setCustomValidity("");
-                }
-            }
-
-            var globalErrors = [] ;
-            for(var i=0; i<errors.length; i++){
-                var error = errors[i] ;
-                if(error.field){
-                    var elField = this.view.EL.mainForm.querySelector('[data-field-def="'+error.field+'"] input') ;
-                    if(elField){
-                        elField.setCustomValidity(error.msg);
-                        elField.isManualError = true ;
-                    }else{
-                        globalErrors.push(error) ;
-                    }
-                }else{
-                    globalErrors.push(error) ;
-                }
-            }
-
-            var formValidity = this.view.EL.mainForm.checkValidity() ;
-
-            var invalids = this.view.EL.mainForm.querySelectorAll(":invalid") ;
-            for(var i=0; i<invalids.length; i++){
-                var invalidEl = invalids[i] ;
-                var message = invalidEl.validationMessage ;
-                if(message){
-                    var parentEl = invalidEl.closest("[data-bind]") ;
-                    var feedbackEl = parentEl.querySelector(".invalid-feedback") ;
-                    if(feedbackEl){
-                        feedbackEl.innerHTML = message ;
-                    }
-                    var label = parentEl.getAttribute("data-field-label-error")||parentEl.getAttribute("data-field-label") ;
-                    globalErrors.push({
-                        el: parentEl,
-                        field: parentEl.getAttribute("data-bind"),
-                        fieldDef: parentEl.getAttribute("data-field-def"),
-                        label: label,
-                        msg: (label?label+" : ":"")+message
-                    }) ;
-                }
-            }
-
-            if(globalErrors.length > 0){
-                var msg = globalErrors.map(function(e){ return "<p>"+e.msg+"</p>" ;}).join("\n") ;
-                this.view.formError(msg) ;
-            }
-            callback(null, formValidity&&errors.length === 0) ;
-        }.bind(this)) ;
-
     };
 
     /**
