@@ -370,7 +370,7 @@
                     showEl.style.display = "" ;
                 }else{
                     //hide
-                    showEl.style.display = "none" ;
+                    showEl.style.setProperty("display", "none", "important") ;
                 }
             }
         }) ;
