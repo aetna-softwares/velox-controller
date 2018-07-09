@@ -414,10 +414,11 @@
                             }) ;
                             if(!mapKey){
                                 //not found in map
-                                mapKey = "£"+uuidv4() ;
+                                var separator = decodeURIComponent("%C2%A3") ;
+                                mapKey = separator+uuidv4() ;
                                 route.mapData[mapKey] = data ;
                             }
-                            dataId = "$"+mapKey ;
+                            dataId = "$"+encodeURIComponent(mapKey) ;
                         }
                     }
                 }
@@ -568,7 +569,8 @@
                     var data = r.defaultData;
                     if(dataId){
                         dataId = decodeURIComponent(dataId);
-                        if(dataId[0] === "£"){
+                        var separator = decodeURIComponent("%C2%A3") ;
+                        if(dataId[0] === separator){
                             //start by $, it is an id in data map (anonymous data)
                             data = r.mapData[dataId] ;
                         }else{
