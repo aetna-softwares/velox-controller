@@ -198,7 +198,6 @@
         this._createView() ;
 
         //automatically link onXXX to event
-        VeloxViewController._linkOnFunctions(this, this.view, this) ;
         VeloxViewController._linkOnFunctions(this, this, this) ;
 
         if(!this.viewOptions.noRouting){
@@ -237,6 +236,9 @@
         }
         if(!callback){ callback = function(){} ; }
         
+        if(!this.view.initDone){
+            VeloxViewController._linkOnFunctions(this, this.view, this) ;
+        }
         this.view.longTask(function(done){
             this.emit("beforeEnter", function(err){
                 if(err){ return done(err) ;}
