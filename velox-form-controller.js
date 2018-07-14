@@ -294,12 +294,7 @@
                 callback(html) ;
             }.bind(this)) ;
         }.bind(this) ;
-        this.view.on("btBack", this._onBtBack.bind(this)) ;
-        this.view.on("btCreate", this._onBtCreate.bind(this)) ;
-        this.view.on("btModify", this._onBtModify.bind(this)) ;
-        this.view.on("btCancel", this._onBtCancel.bind(this)) ;
-        this.view.on("btValidate", this._onBtValidate.bind(this)) ;
-        this.view.on("btDelete", this._onBtDelete.bind(this)) ;
+        
         this.view.formError = function(msg){
             this.EL.formErrorMsg.innerHTML = msg ;
         } ;
@@ -381,18 +376,31 @@
      * 
      * @return {object} based on defaultData option with VeloxFormController.UUID_AUTO replaced
      */
+    VeloxFormController.prototype._getDefaultData = function(callback){
+        this.getDefaultData(function(err, defaultData){
+            if(err){ return callback(err) ;}
+            var schema = VeloxWebView.fieldsSchema.getSchema();
+            prepareRecord(schema, this.table, defaultData) ;
+            callback(null,defaultData);
+        }.bind(this)) ;
+    } ;
+
+
+    /**
+     * Get the default data when create a new record
+     * 
+     * @return {object} based on defaultData option with VeloxFormController.UUID_AUTO replaced
+     */
     VeloxFormController.prototype.getDefaultData = function(callback){
         var defaultData = this.viewOptions.defaultData || {} ;
         var defaultDataStr = JSON.stringify(defaultData) ;
         defaultData = JSON.parse(defaultDataStr) ;        
-        var schema = VeloxWebView.fieldsSchema.getSchema();
-        prepareRecord(schema, this.table, defaultData) ;
         callback(null,defaultData);
     } ;
 
 
     VeloxFormController.prototype._onBtCreate = function(){
-        this.getDefaultData(function(err, defaultData){
+        this._getDefaultData(function(err, defaultData){
             if(err){ throw err; }
             this.view.render(defaultData);
             this._toggleListAuto(true) ;
@@ -749,7 +757,7 @@
         if(!data){
             //no data given, use default data
             this.mode = "create" ;
-            return this.getDefaultData(callback);
+            return this._getDefaultData(callback);
         }else{
             //get fresh data from database
             this.mode = data.$formMode || "read" ;
@@ -765,6 +773,12 @@
         //toggle the list auto input
         this._toggleListAuto(this.mode !== "read");
         this.setMode(this.mode) ;
+        this.view.on("btBack", this._onBtBack.bind(this)) ;
+        this.view.on("btCreate", this._onBtCreate.bind(this)) ;
+        this.view.on("btModify", this._onBtModify.bind(this)) ;
+        this.view.on("btCancel", this._onBtCancel.bind(this)) ;
+        this.view.on("btValidate", this._onBtValidate.bind(this)) ;
+        this.view.on("btDelete", this._onBtDelete.bind(this)) ;
     }
 
     VeloxFormController.prototype.refresh = function(data, callback){
