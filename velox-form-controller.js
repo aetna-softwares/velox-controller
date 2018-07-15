@@ -768,17 +768,20 @@
             }.bind(this)) ;
         }
     } ;
-
-    function doEnterView(){
-        //toggle the list auto input
-        this._toggleListAuto(this.mode !== "read");
-        this.setMode(this.mode) ;
+    
+    VeloxFormController.prototype.initEvents = function(){
         this.view.on("btBack", this._onBtBack.bind(this)) ;
         this.view.on("btCreate", this._onBtCreate.bind(this)) ;
         this.view.on("btModify", this._onBtModify.bind(this)) ;
         this.view.on("btCancel", this._onBtCancel.bind(this)) ;
         this.view.on("btValidate", this._onBtValidate.bind(this)) ;
         this.view.on("btDelete", this._onBtDelete.bind(this)) ;
+    };
+    
+    function doEnterView(){
+        //toggle the list auto input
+        this._toggleListAuto(this.mode !== "read");
+        this.setMode(this.mode) ;
     }
 
     VeloxFormController.prototype.refresh = function(data, callback){

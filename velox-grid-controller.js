@@ -248,6 +248,10 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
             // }.bind(this)) ;
             return filters;
         }.bind(this) ;
+        
+    } ;
+
+    VeloxGridController.prototype.initEvents = function(){
         this.view.on("displayed", function(){
             //force grid re-render on display
             this.view.EL[this.table+"Grid"].render() ;
@@ -273,8 +277,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
         }.bind(this)) ;
         this.view.on("filterChanged", this.refresh.bind(this)) ;
         this.view.on("refresh", this.refresh.bind(this)) ;
-    } ;
-
+    };
     VeloxGridController.prototype.prepareDataOnEnter = function(data, callback){
         this.routeData = data ;
         this.searchRecords(function(err, results){

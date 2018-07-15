@@ -197,8 +197,7 @@
     VeloxViewController.prototype.init = function(){
         this._createView() ;
 
-        //automatically link onXXX to event
-        VeloxViewController._linkOnFunctions(this, this, this) ;
+        this._initEvents() ;
 
         if(!this.viewOptions.noRouting){
             if(this.viewOptions.route !== undefined){
@@ -214,6 +213,20 @@
             var eventName = onFunName[2].toLowerCase()+onFunName.substring(3) ;
             view.on(eventName, controller[onFunName].bind(bind)) ;
         }) ;
+    } ;
+
+    /**
+     * Do event registration here, it will be called on view creation
+     */
+    VeloxViewController.prototype.initEvents = function(){
+    } ;
+
+    VeloxViewController.prototype._initEvents = function(){
+        if(!this.view.listeners.__controllerInitEventsDone){
+            this.view.listeners.__controllerInitEventsDone = true ;
+            VeloxViewController._linkOnFunctions(this, this.view, this) ;
+            this.initEvents() ;
+        }
     } ;
 
 
@@ -236,9 +249,7 @@
         }
         if(!callback){ callback = function(){} ; }
         
-        if(!this.view.initDone){
-            VeloxViewController._linkOnFunctions(this, this.view, this) ;
-        }
+        this._initEvents() ;
         this.view.longTask(function(done){
             this.emit("beforeEnter", function(err){
                 if(err){ return done(err) ;}

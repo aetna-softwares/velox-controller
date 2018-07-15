@@ -46,6 +46,18 @@
         this.gridController = new VeloxGridController(this.table, options.grid) ;
         this.formController = new VeloxFormController(this.table, options.form) ;  
 
+        this.gridController.initEvents = function(){
+            VeloxGridController.prototype.initEvents.apply(this.gridController) ;
+            this.gridController.view.on("initDone", this._onInitDone.bind(this)) ;
+            this.gridController.view.on("rowClick", this._onOpenRecord.bind(this)) ;
+            this.gridController.view.on("createNew", this._onCreateNew.bind(this)) ;
+        }.bind(this) ;
+
+        this.formController.initEvents = function(){
+            VeloxFormController.prototype.initEvents.apply(this.formController) ;
+            this.formController.view.on("back", this._onBackToGrid.bind(this)) ;
+        }.bind(this) ;
+
         this.leave = this.gridController.leave.bind(this.gridController);
         this.enter = this.gridController.enter.bind(this.gridController);
         this.stack = this.gridController.stack.bind(this.gridController);
@@ -58,13 +70,7 @@
         this.registerController(this.gridController) ;
         
         this.viewGrid = this.gridController.view ;
-
-        this.viewGrid.on("initDone", this._onInitDone.bind(this)) ;
-        this.viewGrid.on("rowClick", this._onOpenRecord.bind(this)) ;
-        this.viewGrid.on("createNew", this._onCreateNew.bind(this)) ;
-
         this.viewForm = this.formController.view ;
-        this.viewForm.on("back", this._onBackToGrid.bind(this)) ;
     } ;
 
     VeloxGridAndFormController.prototype._onBackToGrid = function(){
