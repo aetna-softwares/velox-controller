@@ -400,12 +400,7 @@
 
 
     VeloxFormController.prototype._onBtCreate = function(){
-        this._getDefaultData(function(err, defaultData){
-            if(err){ throw err; }
-            this.view.render(defaultData);
-            this._toggleListAuto(true) ;
-            this.setMode("create") ;
-        }.bind(this)) ;
+        this.updateRouteData(this.viewOptions.route);
     };
     VeloxFormController.prototype._onBtModify = function(){
         this._toggleListAuto(true);
