@@ -554,47 +554,49 @@
      */
     VeloxAppController.prototype._getRoutes = function(destination){
         var destinationRoutes = destination.split("#") ;
-        if(destination.indexOf("#$") === 0){
+        if(destination.indexOf("#$") === 0 || destination.indexOf("#~") === 0){
             //special case when destination is #$data, split will give "", "$data" 
             //but we want only 1 "" route
             destinationRoutes = destinationRoutes.slice(1) ;
         }
         var foundRoutes = [];
-        destinationRoutes.forEach(function(r, urlPosition){
-            var routeAndDataId = r.split("$") ;
-            var routeDestName = routeAndDataId[0].replace(/^!/, "") ;
-            var dataId = routeAndDataId[1] ;
-            this.routes.forEach(function(r){
-                if(r.route === routeDestName){
-                    var data = r.defaultData;
-                    if(dataId){
-                        dataId = decodeURIComponent(dataId);
-                        var separator = decodeURIComponent("%C2%A3") ;
-                        if(dataId[0] === separator){
-                            //start by $, it is an id in data map (anonymous data)
-                            data = r.mapData[dataId] ;
-                        }else{
-                            //it is urlEncoded data
-                            var data = dataId;
-                            if(data.length > 0 && ['"', '[', '{'].indexOf(data[0]) !== -1){
-                                data = JSON.parse(data) ;
+        destinationRoutes.forEach(function(routePos, urlPosition){
+            routePos.split("~").forEach(function(r){
+                var routeAndDataId = r.split("$") ;
+                var routeDestName = routeAndDataId[0].replace(/^!/, "") ;
+                var dataId = routeAndDataId[1] ;
+                this.routes.forEach(function(r){
+                    if(r.route === routeDestName){
+                        var data = r.defaultData;
+                        if(dataId){
+                            dataId = decodeURIComponent(dataId);
+                            var separator = decodeURIComponent("%C2%A3") ;
+                            if(dataId[0] === separator){
+                                //start by $, it is an id in data map (anonymous data)
+                                data = r.mapData[dataId] ;
+                            }else{
+                                //it is urlEncoded data
+                                var data = dataId;
+                                if(data.length > 0 && ['"', '[', '{'].indexOf(data[0]) !== -1){
+                                    data = JSON.parse(data) ;
+                                }
                             }
                         }
-                    }
 
-                    foundRoutes.push({
-                        route : r.route,
-                        urlPosition: urlPosition,
-                        listenerEnter : r.listenerEnter,
-                        listenerLeave: r.listenerLeave,
-                        listenerStack : r.listenerStack,
-                        listenerUnstack : r.listenerUnstack,
-                        listenerModify : r.listenerModify,
-                        def: r,
-                        data: data
-                    });
-                }
-            }) ;
+                        foundRoutes.push({
+                            route : r.route,
+                            urlPosition: urlPosition,
+                            listenerEnter : r.listenerEnter,
+                            listenerLeave: r.listenerLeave,
+                            listenerStack : r.listenerStack,
+                            listenerUnstack : r.listenerUnstack,
+                            listenerModify : r.listenerModify,
+                            def: r,
+                            data: data
+                        });
+                    }
+                }.bind(this)) ;
+            }.bind(this)) ;
         }.bind(this)) ;
         
         
@@ -669,27 +671,39 @@
             }
         }.bind(this)) ;
 
+        //The new top routes are the routes having the highest URL position
+        var newTopRoutes = newRoutes.filter(function(r){ return r.urlPosition === newRoutes[newRoutes.length-1].urlPosition; }) ;
+        var newTopRoutesName = newTopRoutes.map(function(r){ return r.route ;}) ;
+        //Get the previous top route with same condition on previous stack
+        var previousTopRoutes = previousRoutes.filter(function(r){ return r.urlPosition === previousRoutes[previousRoutes.length-1].urlPosition; }) ;
+        var previousTopRoutesName = previousTopRoutes.map(function(r){ return r.route ;}) ;
+
         //check which route is in previous and new but was on top in previous and not in top in new
         var stackedRoutes = [] ;
         if(previousRoutes.length > 0 && newRoutes.length > 0){
-            var previousTopRoute = previousRoutes[previousRoutes.length-1] ;
-            var newTopRoute = newRoutes[newRoutes.length-1] ;
-            if(newTopRoute.urlPosition !== previousTopRoute.urlPosition &&
-                newRoutes.some(function(n, i){ return n.route === previousTopRoute.route && i<newRoutes.length-1 ;})){
-                stackedRoutes.push(previousTopRoute) ;
-            }
+            //the stacked routes are the route that was in previous top route but are not in new top routes
+            stackedRoutes = newRoutes.filter(function(newRoute){ 
+                return previousTopRoutesName.indexOf(newRoute.route) !== -1 //was in previous TOP routes
+                    && newTopRoutesName.indexOf(newRoute.route) === -1 ; //but not in new TOP routes
+            }) ;
+
         }else{
-            //no previous, it may be because the user just paste the whole url in, all new route except the last is stacked
-            stackedRoutes = newRoutes.slice(0, newRoutes.length-1) ;
+            //no previous, it may be because the user just paste the whole url in, all new route except the new TOP routes are stacked
+            stackedRoutes = newRoutes.filter(function(newRoute){ 
+                return newTopRoutesName.indexOf(newRoute.route) === -1 ; //but not in new TOP routes
+            });
         }
 
         //check which route is in previous but not in the top and is at the top in new
         var unstackedRoutes = [] ;
         if(newRoutes.length>0){
-            var newTopRoute = newRoutes[newRoutes.length-1] ;
-            if(previousRoutes.some(function(o, i){ return o.route === newTopRoute.route && i<previousRoutes.length-1 ;})){
-                unstackedRoutes.push(newTopRoute) ;
-            }
+            var previousRoutesName = previousRoutes.map(function(r){ return r.route ;}) ;
+
+            //the unstacked routes are the route that are in the new top routes, was in the previous route but was not in the previous top route
+            unstackedRoutes = newTopRoutes.filter(function(newRoute){ 
+                return previousRoutesName.indexOf(newRoute.route) !== -1 //was in previous routes
+                    && previousTopRoutesName.indexOf(newRoute.route) === -1 ; //but not in previous TOP routes
+            }) ;
         }
 
         //check which route is both in previous and current but with different data value
@@ -703,6 +717,11 @@
         var previousPosition = this.currentRoute ;
         this.currentRoute = currentPosition ;
 
+        console.log("navigation", { 
+            currentPosition : currentPosition, previousPosition: previousPosition,
+            removedRoutes: removedRoutes, stackedRoutes: stackedRoutes,
+            addedRoutes: addedRoutes, unstackedRoutes: unstackedRoutes, modifiedRoutes: modifiedRoutes,
+        }) ;
         this._runInterceptor(interc.slice(), { 
             currentPosition : currentPosition, previousPosition: previousPosition,
             removedRoutes: removedRoutes, stackedRoutes: stackedRoutes,
