@@ -42,6 +42,8 @@
             options.form.joinFetch = options.joinFetch ;
         }
 
+        this.options = options;
+
         this.table = table;
         this.gridController = new VeloxGridController(this.table, options.grid) ;
         this.formController = new VeloxFormController(this.table, options.form) ;  

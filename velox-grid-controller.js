@@ -182,6 +182,16 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
                         thToolbar.innerHTML = VeloxWebView.tr?VeloxWebView.tr("form.refresh"):"Refresh";
                         thToolbar.id = "refresh";
                     }
+                    if(this.viewOptions.canImport){
+                        var trToolbar =  document.createElement("tr") ;
+                        trToolbar.setAttribute("data-toolbar", true) ;
+                        trToolbar.setAttribute("data-toolbar-prepend", true) ;
+                        thead.appendChild(trToolbar) ;
+                        var thToolbar = document.createElement("th") ;
+                        trToolbar.appendChild(thToolbar) ;
+                        thToolbar.innerHTML = VeloxWebView.tr?VeloxWebView.tr("form.import"):"Import";
+                        thToolbar.id = "import";
+                    }
                     if(this.viewOptions.canCreate){
                         var trToolbar =  document.createElement("tr") ;
                         trToolbar.setAttribute("data-toolbar", true) ;
