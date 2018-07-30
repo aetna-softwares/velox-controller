@@ -22,15 +22,13 @@
             this.options.importer.openInPopup = true ;
         }
 
-        this.importerRoute = this.options.importer.route ;
+        var importerOptions = this.options.importer ;
+        this.options.importer = this.options.form ;
+        Object.keys(importerOptions).forEach(function(k){
+            this.options.importer[k] = importerOptions[k] ;
+        }.bind(this)) ;
 
-        if(this.options.noRouting){
-            this.options.importer.noRouting = this.options.noRouting;
-        }
-        
-        if(this.options.joinFetch){
-            this.options.importer.joinFetch = this.options.joinFetch ;
-        }
+        this.importerRoute = this.options.importer.route ;
 
         this.importerController = new VeloxImporterController(this.table, options.importer) ;
 

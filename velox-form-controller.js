@@ -126,6 +126,7 @@
             options.labels.cancel = VeloxWebView.tr?VeloxWebView.tr("form.cancel"):"Cancel" ;
         }
 
+        this.options = options ;
         this.mode = "read" ;
         this.validations = [] ;
 
@@ -246,51 +247,9 @@
                 }
 
                 //no html view file is given, generate automatic HTML
-                var schema = VeloxWebView.fieldsSchema.getSchema();
-                if(!html){
-                    //no HTML
-                    var title = this.viewOptions.title ;
-                    if(!title) {
-                        title = VeloxWebView.tr?VeloxWebView.tr("fields.table."+this.table):"Form" ;
-                    }
-                    html = script+'$FORM_TITLE<div id="formControlButtons">$FORM_BUTTONS</div>' ;
-                    if(!formHTML){
-                        formHTML = '<form id="mainForm" >';
-                        schema[this.table].columns.forEach(function(col){
-                            if(col.name.indexOf("velox_")!==0){
-                                formHTML += '<div data-field-def="'+this.table+'.'+col.name+'"></div>' ;
-                            }
-                        }.bind(this)) ;
-                        formHTML += '</form>';
-                    }
-
-                    var indexEndFormTag = formHTML.indexOf(">") ;
-                    formHTML = formHTML.substring(0, indexEndFormTag+1) +'<div class="alert alert-danger form-invalid-feedback" id="formErrorMsg"></div>'+formHTML.substring(indexEndFormTag+1) ;
-                    html += formHTML ;
-                }
+                html = this.prepareHTML(html, script, formHTML, header, customButtons) ;
                 
-                var buttons = this.viewOptions.buttonsHTML || VeloxFormController.globalsOptions.buttonsHTML ;
-                if(!buttons){
-                    buttons = '' ;
-                    buttons += '<button id="btBack" data-emit>'+this.viewOptions.labels.back+'</button>' ;
-                    buttons += '<button id="btCreate" data-emit>'+this.viewOptions.labels.create+'</button>' ;
-                    buttons += '<button id="btModify" data-emit>'+this.viewOptions.labels.modify+'</button>' ;
-                    buttons += '<button id="btCancel" data-emit>'+this.viewOptions.labels.cancel+'</button>' ;
-                    buttons += '<button id="btValidate" data-emit>'+this.viewOptions.labels.validate+'</button>' ;
-                    buttons += '<button id="btDelete" data-emit>'+this.viewOptions.labels.delete+'</button>' ;
-                    buttons += '$HEADER' ;
-                }
-                buttons += customButtons.trim();
-                html = html.replace("$FORM_BUTTONS", buttons) ;
-                html = html.replace("$HEADER", header) ;
-
-                var titleHTML = this.viewOptions.titleHTML || VeloxFormController.globalsOptions.titleHTML ;
-                if(!titleHTML){
-                    titleHTML = '<h1 class="velox-form-title">'+title+'</h1>' ;
-                }
-
-                html = html.replace("$FORM_TITLE", titleHTML) ;
-                loadFormCSS() ;
+                
                 callback(html) ;
             }.bind(this)) ;
         }.bind(this) ;
@@ -305,6 +264,55 @@
             }
             this.EL.formErrorMsg.innerHTML = "" ;
         } ;
+    };
+
+    VeloxFormController.prototype.prepareHTML = function(html, script, formHTML, header, customButtons){
+        //no HTML
+        var schema = VeloxWebView.fieldsSchema.getSchema();
+        if(!html){
+            html = "";
+            var title = this.viewOptions.title ;
+            if(!title) {
+                title = VeloxWebView.tr?VeloxWebView.tr("fields.table."+this.table):"Form" ;
+            }
+            html = script+'$FORM_TITLE<div id="formControlButtons">$FORM_BUTTONS</div>' ;
+            if(!formHTML){
+                formHTML = '<form id="mainForm" >';
+                schema[this.table].columns.forEach(function(col){
+                    if(col.name.indexOf("velox_")!==0){
+                        formHTML += '<div data-field-def="'+this.table+'.'+col.name+'"></div>' ;
+                    }
+                }.bind(this)) ;
+                formHTML += '</form>';
+            }
+    
+            var indexEndFormTag = formHTML.indexOf(">") ;
+            formHTML = formHTML.substring(0, indexEndFormTag+1) +'<div class="alert alert-danger form-invalid-feedback" id="formErrorMsg"></div>'+formHTML.substring(indexEndFormTag+1) ;
+            html += formHTML ;
+        }
+        var buttons = this.viewOptions.buttonsHTML || VeloxFormController.globalsOptions.buttonsHTML ;
+        if(!buttons){
+            buttons = '' ;
+            buttons += '<button id="btBack" data-emit>'+this.viewOptions.labels.back+'</button>' ;
+            buttons += '<button id="btCreate" data-emit>'+this.viewOptions.labels.create+'</button>' ;
+            buttons += '<button id="btModify" data-emit>'+this.viewOptions.labels.modify+'</button>' ;
+            buttons += '<button id="btCancel" data-emit>'+this.viewOptions.labels.cancel+'</button>' ;
+            buttons += '<button id="btValidate" data-emit>'+this.viewOptions.labels.validate+'</button>' ;
+            buttons += '<button id="btDelete" data-emit>'+this.viewOptions.labels.delete+'</button>' ;
+            buttons += '$HEADER' ;
+        }
+        buttons += customButtons.trim();
+        html = html.replace("$FORM_BUTTONS", buttons) ;
+        html = html.replace("$HEADER", header) ;
+
+        var titleHTML = this.viewOptions.titleHTML || VeloxFormController.globalsOptions.titleHTML ;
+        if(!titleHTML){
+            titleHTML = '<h1 class="velox-form-title">'+title+'</h1>' ;
+        }
+
+        html = html.replace("$FORM_TITLE", titleHTML) ;
+        loadFormCSS() ;
+        return html;
     };
 
     /**
@@ -484,7 +492,7 @@
                                 recordsToSave.push({table: join.otherTable, record : r}) ;
                             }.bind(this)) ;
 
-                            if(dataBeforeModif[name] && Array.isArray(dataBeforeModif[name])){
+                            if(dataBeforeModif && dataBeforeModif[name] && Array.isArray(dataBeforeModif[name])){
                                 //search records removed
                                 dataBeforeModif[name].forEach(function(oldRecord){
                                     //check if still exists in new data
