@@ -159,6 +159,7 @@
                             if(err){ return done(err) ;}
 
                             var fieldsByCode = {} ;
+                            this.bindings = [] ;
                             var fieldsets = this.view.EL.mainForm.querySelectorAll("fieldset") ;
                             for(var i=0; i<fieldsets.length; i++){
                                 var legend = fieldsets[i].querySelector("legend") ;
@@ -181,11 +182,15 @@
                                 if(f.getAttribute("data-field") === "grid"){ continue ; }
                                 var label = f.querySelector("label") ;
                                 var bindAttr = f.getAttribute("data-bind");
+                                var fieldDef = f.getAttribute("data-field-def");
+                                var fieldType = f.getAttribute("data-field");
                                 var fieldLabel = label?label.innerHTML:VeloxWebView.tr?VeloxWebView.tr("fields."+f.getAttribute("data-field-def")):bindAttr ;
                                 if(!fieldsByCode[bindAttr]){
                                     fieldsByCode[bindAttr] = { field: f, fieldSet: null } ;
                                 }
                                 fieldsByCode[bindAttr].label = fieldLabel ;
+                                fieldsByCode[bindAttr].fieldDef = fieldDef ;
+                                fieldsByCode[bindAttr].type = fieldType ;
                                 if(fieldsByCode[bindAttr].fieldSet !== currentGroup){
                                     if(currentGroup){
                                         optionsFooter += "</optgroup>" ;
@@ -201,13 +206,34 @@
                                 optionsFooter += "</optgroup>" ;
                             }
 
+                            this.fieldsByCode = fieldsByCode ;
+
                             var htmlTable = '<div style="height: calc(100% - 40px)" class="velox-grid"><table cellspacing="0" data-responsive="false" data-no-toolbar data-no-search>' ;
                             htmlTable += "<thead><tr>"+contents[0].map(function(c, i){ return '<th data-field-name="'+i+'">'+String.fromCharCode(65+i)+"</th>" ;}).join("")+"</tr></thead>" ;
                             htmlTable += "<tfoot>"+
                             "<tr>"+contents[0].map(function(c, i){ 
                                 return '<th><select style="max-width:200px" data-field-name="'+i+'">'+optionsFooter+'</select></th>' ;
-                            }).join("")+"</tr></tfoot></table></div>" ;
+                            }).join("")+"</tr>";
+                            htmlTable += "<script>" ;
+                            htmlTable += 'for(var i=0; i<'+contents[0].length+'; i++){';
+                            htmlTable += ' (function(i){';
+                            htmlTable += ' var select = datatable.column(i).footer().querySelector("select") ;';
+                            htmlTable += ' if(select && !select.initEmit){';
+                            htmlTable += '    select.addEventListener("change", function(){';
+                            htmlTable += '        view.emit("bindChange", {field: select.getAttribute("data-field-name"), value: select.value}) ;';
+                            htmlTable += '    }) ;';
+                            htmlTable += '    select.initEmit = true ;';
+                            htmlTable += ' }';
+                            htmlTable += ' })(i) ;';
+                            htmlTable += '}';
+                            htmlTable += "</script>" ;
+                            htmlTable += "</tfoot></table></div>" ;
 
+                            for(var i=0; i<contents[0].length; i++){
+                                this.bindings.push({
+                                    bind: "__ignore" 
+                                }) ;
+                            }
 
                             
                             this.view.EL.importTableContainer.innerHTML = htmlTable ;
@@ -238,6 +264,60 @@
         input.style.display = "none" ;
     } ;
 
+    VeloxImporterController.prototype.onBindChange = function(ev){
+        this.bindings[ev.data.field].bind = ev.data.value ;
+        delete this.bindings[ev.data.field].bindCodes ;
+        var field = this.fieldsByCode[ev.data.value] ;
+        if(field){
+            if(field.type === "select"){
+                this.bindings[ev.data.field].bindCodes = {} ;
+                this.showCodesPopup(ev.data.field, field, this.bindings[ev.data.field].bindCodes) ;
+            }
+        }
+    } ;
+
+    VeloxImporterController.prototype.showCodesPopup = function(index, field, bindCodes){
+        var lines = this.grid.getValue() ;
+        var importValues = [] ;
+        for(var i=0; i<lines.length; i++){
+            var line = lines[i] ;
+            var val = line[index] ;
+            if(importValues.indexOf(val) === -1){
+                importValues.push(val) ;
+            }
+        }
+        var possibleValues = field.field.getOptions() ;
+        var htmlPopup = "" ;
+        for(var i=0; i<importValues.length; i++){
+            var val = importValues[i] ;
+            htmlPopup += "<div>";
+            htmlPopup += "<label>"+val+"</label>";
+            htmlPopup += '<select data-val="'+val+'">';
+            for(var y=0; y<possibleValues.length; y++){
+                var v = possibleValues[y] ;
+                var selected = "" ;
+                if(bindCodes[val] === v.id){
+                    selected = " selected" ;
+                }
+                htmlPopup += '<option value="'+v.id+'" '+selected+'>'+v.label+'</option>';
+            }
+            htmlPopup += "</select>";
+            htmlPopup += "</div>";
+        }
+        htmlPopup += '<button id="ok" data-emit data-i18n="global.ok">OK</button>';
+
+        var view = new VeloxWebView(null, null, {
+            html: htmlPopup
+        }) ;
+        view.openInPopup() ;
+        view.on("ok", function(){
+            var selects = view.container.querySelectorAll("select") ;
+            for(var i=0; i<selects.length; i++){
+                var select = selects[i] ;
+                bindCodes[select.getAttribute("data-val")] = select.value ;
+            }
+        }.bind(this)) ;
+    } ;
 
     VeloxImporterController.prototype.checkRequiredFields = function(validationData){
         //{form: form, data: viewData, dataBeforeModif : dataBeforeModif}
@@ -269,15 +349,6 @@
     VeloxImporterController.prototype.onStartImport = function(){
         var lines = this.grid.getValue() ;
         
-        var bindings = {} ;
-        for(var i=0; i<lines[0].length; i++){
-            var select = this.grid.querySelector('.dataTables_scrollFoot select[data-field-name="'+i+'"]') ;
-            var bind = select.value ;
-            if(bind !== "__ignore"){
-                bindings[i] = bind.split(".") ;
-            }
-        }
-        
         this.view.longTask(function(done){
             this.prepareDataOnEnter(null, function(err, defaultData){
                 if(err){ return done(err) ;}
@@ -295,9 +366,13 @@
                     var lineToImport = JSON.parse(defaultData) ;
                     //add values from table binding
                     for(var y=0; y<line.length; y++){
-                        var bind = bindings[y] ;
+                        var bind = this.bindings[y] ;
                         if(bind){
-                            VeloxWebView.pathSetValue(lineToImport, bind, line[y]) ;
+                            var val = line[y] ;
+                            if(bind.bindCodes){
+                                val = bind.bindCodes[val] ;
+                            }
+                            VeloxWebView.pathSetValue(lineToImport, bind.bind, val) ;
                         }
                     }
                     //check data
