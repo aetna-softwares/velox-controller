@@ -1,4 +1,4 @@
-/*global define*/
+        /*global define*/
 ; (function (global, factory) {
     if (typeof exports === 'object' && typeof module !== 'undefined') {
         var VeloxViewController = require("velox-controller").ViewController ;
@@ -254,6 +254,7 @@
             }.bind(this)) ;
         }.bind(this) ;
         
+
         this.view.formError = function(msg){
             this.EL.formErrorMsg.innerHTML = msg ;
         } ;

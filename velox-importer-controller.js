@@ -22,7 +22,6 @@
      * @property {string} [create] button create label (default translation of "form.create" or "Create" if no i18n
      * @property {string} [modify] button modify label (default translation of "form.modify" or "Modify" if no i18n
      * @property {string} [delete] button delete label (default translation of "form.delete" or "Delete" if no i18n
-     * @property {string} [validate] button validate label (default translation of "form.validate" or "Validate" if no i18n
      * @property {string} [cancel] button cancel label (default translation of "form.cancel" or "Cancel" if no i18n
      */
 
@@ -70,9 +69,6 @@
         if(!this.options.labels.importSuccess){
             this.options.labels.importSuccess = VeloxWebView.tr?VeloxWebView.tr("importer.importSuccess"):"Import succeed" ;
         }
-        if(!this.options.labels.validate){
-            this.options.labels.validate = VeloxWebView.tr?VeloxWebView.tr("importer.validate"):"Validate" ;
-        }
         if(!this.options.labels.tooMuchValues){
             this.options.labels.tooMuchValues = VeloxWebView.tr?VeloxWebView.tr("importer.tooMuchValues"):"There are too many different values in this column to be used with this field" ;
         }
@@ -87,6 +83,8 @@
         }
 
         this.validations.push(this.checkRequiredFields.bind(this)) ;
+
+        this.on("initView", doInitView.bind(this)) ;
     } ;
 
 
@@ -102,7 +100,9 @@
         if(importerCSSLoaded){ return ;}
 
         //
-        var css = "";
+        var css = ".velox-importer-header-buttons { display: flex }";
+        css += ".velox-importer-header-checkbox { margin-left: 2rem; margin-right: auto }";
+        css += ".velox-importer-grid-container h1 { text-align: center; margin-top: 100px; }";
 
         var head = document.getElementsByTagName('head')[0];
         var s = document.createElement('style');
@@ -117,6 +117,15 @@
     }
 
 
+    function doInitView(){
+        this.view.on("compiled", function(ev){
+            var parsed = ev.data ;
+            if(VeloxImporterController.globalsOptions.decorator){
+                VeloxImporterController.globalsOptions.decorator(parsed) ;
+            }
+        }) ;
+    }
+
     VeloxImporterController.prototype.prepareHTML = function(html, script, formHTML, header, customButtons){
         //no HTML
         var schema = VeloxWebView.fieldsSchema.getSchema();
@@ -124,11 +133,12 @@
             //no HTML
             html = '' ;//script;
             html += '<div>';
-            html += '<div id="chooseContainer">';
-            html += '<button id="chooseFile" type="button" data-emit>'+this.options.labels.chooseFileToImport+'</button>';
-            html += '<button id="startImport" type="button" data-emit>'+this.options.labels.startImport+'</button>';
+            html += '<div id="chooseContainer" class="velox-importer-header-buttons">';
+            html += '<button id="chooseFile" class="velox-importer-choose-file" type="button" data-emit>'+this.options.labels.chooseFileToImport+'</button> ';
+            html += '<div class="velox-importer-header-checkbox"><input type="checkbox" id="firstLineIsHeader" data-emit/><label for="firstLineIsHeader">'+this.options.labels.firstLineContainsColumnNames+'</label></div> ';
+            html += '<button id="startImport" class="velox-importer-choose-start" style="display: none" type="button" data-emit>'+this.options.labels.startImport+'</button>';
             html += '</div>' ;
-            html += '<div id="importTableContainer"></div>';
+            html += '<div id="importTableContainer" class="velox-importer-grid-container"></div>';
             html += '</div>' ;
             if(!formHTML){
                 formHTML = '<form id="mainForm" >';
@@ -145,6 +155,24 @@
         return html;
     };
 
+    VeloxImporterController.prototype.getColumnName = function(cell, index){
+        var name = cell ;
+        if(!this.view.EL.firstLineIsHeader.checked){
+            var ordA = 'a'.charCodeAt(0);
+            var ordZ = 'z'.charCodeAt(0);
+            var len = ordZ - ordA + 1;
+        
+            var s = "";
+            var n = index ;
+            while(n >= 0) {
+                s = String.fromCharCode(n % len + ordA) + s;
+                n = Math.floor(n / len) - 1;
+            }
+            name = s.toUpperCase();
+        }
+        return name ;
+    } ;
+
     VeloxImporterController.prototype.onChooseFile = function(){
         var input = document.createElement("INPUT") ;
         input.type = "file" ;
@@ -158,99 +186,13 @@
                         this.readFile(input.files[0], function(err, contents){
                             if(err){ return done(err) ;}
 
-                            var fieldsByCode = {} ;
-                            this.bindings = [] ;
-                            var fieldsets = this.view.EL.mainForm.querySelectorAll("fieldset") ;
-                            for(var i=0; i<fieldsets.length; i++){
-                                var legend = fieldsets[i].querySelector("legend") ;
-                                var fieldSetLabel = legend?legend.innerHTML:"" ;
-                                var fields = fieldsets[i].querySelectorAll("[data-field-def]") ;
-                                for(var y=0; y<fields.length; y++){
-                                    var f = fields[y] ;
-                                    fieldsByCode[f.getAttribute("data-bind")] = {
-                                        field: f,
-                                        fieldSet: fieldSetLabel
-                                    } ;
-                                }
-                            }
+                            this.contents = contents;
 
-                            var optionsFooter = '<option value="__ignore">'+this.options.labels.ignoreThisColumn+'</option>' ;
-                            var currentGroup = null;
-                            var fields = this.view.EL.mainForm.querySelectorAll("[data-field-def]") ;
-                            for(var y=0; y<fields.length; y++){
-                                var f = fields[y] ;
-                                if(f.getAttribute("data-field") === "grid"){ continue ; }
-                                var label = f.querySelector("label") ;
-                                var bindAttr = f.getAttribute("data-bind");
-                                var fieldDef = f.getAttribute("data-field-def");
-                                var fieldType = f.getAttribute("data-field");
-                                var fieldLabel = label?label.innerHTML:VeloxWebView.tr?VeloxWebView.tr("fields."+f.getAttribute("data-field-def")):bindAttr ;
-                                if(!fieldsByCode[bindAttr]){
-                                    fieldsByCode[bindAttr] = { field: f, fieldSet: null } ;
-                                }
-                                fieldsByCode[bindAttr].label = fieldLabel ;
-                                fieldsByCode[bindAttr].fieldDef = fieldDef ;
-                                fieldsByCode[bindAttr].type = fieldType ;
-                                if(fieldsByCode[bindAttr].fieldSet !== currentGroup){
-                                    if(currentGroup){
-                                        optionsFooter += "</optgroup>" ;
-                                    }
-                                    if(fieldsByCode[bindAttr].fieldSet){
-                                        optionsFooter += '<optgroup label="'+fieldsByCode[bindAttr].fieldSet+'">' ;
-                                    }
-                                    currentGroup = fieldsByCode[bindAttr].fieldSet ;
-                                }
-                                optionsFooter += '<option value="'+bindAttr+'">'+fieldLabel+'</option>' ;
-                            }
-                            if(currentGroup){
-                                optionsFooter += "</optgroup>" ;
-                            }
-
-                            this.fieldsByCode = fieldsByCode ;
-
-                            var htmlTable = '<div style="height: calc(100% - 40px)" class="velox-grid"><table cellspacing="0" data-responsive="false" data-no-toolbar data-no-search>' ;
-                            htmlTable += "<thead><tr>"+contents[0].map(function(c, i){ return '<th data-field-name="'+i+'">'+String.fromCharCode(65+i)+"</th>" ;}).join("")+"</tr></thead>" ;
-                            htmlTable += "<tfoot>"+
-                            "<tr>"+contents[0].map(function(c, i){ 
-                                return '<th><select style="max-width:200px" data-field-name="'+i+'">'+optionsFooter+'</select></th>' ;
-                            }).join("")+"</tr>";
-                            htmlTable += "<script>" ;
-                            htmlTable += 'for(var i=0; i<'+contents[0].length+'; i++){';
-                            htmlTable += ' (function(i){';
-                            htmlTable += ' var select = datatable.column(i).footer().querySelector("select") ;';
-                            htmlTable += ' if(select && !select.initEmit){';
-                            htmlTable += '    select.addEventListener("change", function(){';
-                            htmlTable += '        view.emit("bindChange", {field: select.getAttribute("data-field-name"), value: select.value}) ;';
-                            htmlTable += '    }) ;';
-                            htmlTable += '    select.initEmit = true ;';
-                            htmlTable += ' }';
-                            htmlTable += ' })(i) ;';
-                            htmlTable += '}';
-                            htmlTable += "</script>" ;
-                            htmlTable += "</tfoot></table></div>" ;
-
-                            for(var i=0; i<contents[0].length; i++){
-                                this.bindings.push({
-                                    bind: "__ignore" 
-                                }) ;
-                            }
-
-                            
-                            this.view.EL.importTableContainer.innerHTML = htmlTable ;
-                            var table = this.view.EL.importTableContainer.querySelector("div") ;
-                            this.grid = table ;
-
-                            //http://live.datatables.net/sadipaji/1/edit
-                            //https://datatables.net/examples/advanced_init/footer_callback.html
-                            table.addEventListener("tableinit", function(){
-                                table.setValue(contents) ;
-                                done() ;
-                            }) ;
-                            this.view.createField(table, "grid", 0, {}, function(err){
+                            this.createGrid(function(err){
                                 if(err){ return done(err) ;}
-                            }) ;
-
-
+                                this.view.EL.startImport.style.display = "block" ;
+                                done() ;
+                            }.bind(this)) ;
                         }.bind(this)) ;
                     }.bind(this), 200) ;
                 }.bind(this), function(){
@@ -264,15 +206,172 @@
         input.style.display = "none" ;
     } ;
 
+    VeloxImporterController.prototype.onFirstLineIsHeader = function(){
+        if(!this.contents || this.contents.length === 0){ return  ;}
+        this.view.longTask(function(done){
+            this.createGrid(done) ;
+        }.bind(this));
+    };
+
+    VeloxImporterController.prototype.getBindings = function(callback){
+        var bindings = [] ;
+        if(!this.contents || this.contents.length === 0){ return callback(null, bindings) ;}
+        for(var i=0; i<this.contents[0].length; i++){
+            bindings.push({
+                bind: "__ignore" 
+            }) ;
+        }
+        if(!this.view.EL.firstLineIsHeader.checked){
+            return callback(null, bindings) ;
+        }
+        if(!this.api || !this.api.__velox_database){
+            return callback(null, bindings) ;
+        }
+        this.api.__velox_database.velox_map.searchFirst({code: "velox_importer_bindings", key: this.getHeaderKey(this.contents[0])}, function(err, mapBindings){
+            if(err){ return callback(err) ;}
+            callback(null, mapBindings?mapBindings.value:bindings) ;
+        }) ;
+    } ;
+
+    VeloxImporterController.prototype.createGrid = function(done){
+        var fieldsByCode = {} ;
+        this.getBindings(function(err, bindings){
+            if(err){ return done(err) ;}
+        
+            this.bindings = bindings ;
+            this.view.bindings = bindings ;
+            var fieldsets = this.view.EL.mainForm.querySelectorAll("fieldset") ;
+            for(var i=0; i<fieldsets.length; i++){
+                var legend = fieldsets[i].querySelector("legend") ;
+                var fieldSetLabel = legend?legend.innerHTML:"" ;
+                var fields = fieldsets[i].querySelectorAll("[data-field-def]") ;
+                for(var y=0; y<fields.length; y++){
+                    var f = fields[y] ;
+                    fieldsByCode[f.getAttribute("data-bind")] = {
+                        field: f,
+                        fieldSet: fieldSetLabel
+                    } ;
+                }
+            }
+
+            var optionsFooter = '<option value="__ignore">'+this.options.labels.ignoreThisColumn+'</option>' ;
+            var currentGroup = null;
+            var fields = this.view.EL.mainForm.querySelectorAll("[data-field-def]") ;
+            for(var y=0; y<fields.length; y++){
+                var f = fields[y] ;
+                if(f.getAttribute("data-field") === "grid"){ continue ; }
+                var label = f.querySelector("label") ;
+                var bindAttr = f.getAttribute("data-bind");
+                var fieldDef = f.getAttribute("data-field-def");
+                var fieldType = f.getAttribute("data-field");
+                var fieldLabel = label?label.innerHTML:VeloxWebView.tr?VeloxWebView.tr("fields."+f.getAttribute("data-field-def")):bindAttr ;
+                if(!fieldsByCode[bindAttr]){
+                    fieldsByCode[bindAttr] = { field: f, fieldSet: null } ;
+                }
+                fieldsByCode[bindAttr].label = fieldLabel ;
+                fieldsByCode[bindAttr].fieldDef = fieldDef ;
+                fieldsByCode[bindAttr].type = fieldType ;
+                if(fieldsByCode[bindAttr].fieldSet !== currentGroup){
+                    if(currentGroup){
+                        optionsFooter += "</optgroup>" ;
+                    }
+                    if(fieldsByCode[bindAttr].fieldSet){
+                        optionsFooter += '<optgroup label="'+fieldsByCode[bindAttr].fieldSet+'">' ;
+                    }
+                    currentGroup = fieldsByCode[bindAttr].fieldSet ;
+                }
+                optionsFooter += '<option value="'+bindAttr+'">'+fieldLabel+'</option>' ;
+            }
+            if(currentGroup){
+                optionsFooter += "</optgroup>" ;
+            }
+
+            this.fieldsByCode = fieldsByCode ;
+
+            var htmlTable = '<div style="height: calc(100% - 40px)" class="velox-grid"><table cellspacing="0" data-responsive="false" data-no-toolbar data-no-search>' ;
+            htmlTable += "<thead><tr>"+this.contents[0].map(function(c, i){ return '<th data-field-name="'+i+'">'+this.getColumnName(c, i)+"</th>" ;}.bind(this)).join("")+"</tr></thead>" ;
+            htmlTable += "<tfoot>"+
+            "<tr>"+this.contents[0].map(function(c, i){ 
+                return '<th><select style="max-width:200px" data-field-name="'+i+'">'+optionsFooter+'</select> <button type="button" style="display: none">...</button></th>' ;
+            }).join("")+"</tr>";
+            htmlTable += "<script>" ;
+            htmlTable += 'for(var i=0; i<'+this.contents[0].length+'; i++){';
+            htmlTable += ' (function(i){';
+            htmlTable += ' var select = datatable.column(i).footer().querySelector("select") ;';
+            htmlTable += ' var bt = datatable.column(i).footer().querySelector("button") ;';
+            htmlTable += ' view.emit("initFooterControls", {field: select.getAttribute("data-field-name"), value: select.value, select: select, bt: bt}) ;';
+            htmlTable += ' if(select && !select.initEmit){';
+            htmlTable += '    select.addEventListener("change", function(){';
+            htmlTable += '        view.emit("bindChange", {field: select.getAttribute("data-field-name"), value: select.value, select: select, bt: bt}) ;';
+            htmlTable += '    }) ;';
+            htmlTable += '    select.initEmit = true ;';
+            htmlTable += ' }';
+            htmlTable += ' if(select){';
+            htmlTable += '    select.value = view.bindings[i]?view.bindings[i].bind:"__ignore" ;';
+            htmlTable += ' }';
+            htmlTable += ' if(bt && !bt.initEmit){';
+            htmlTable += '    bt.addEventListener("click", function(){';
+            htmlTable += '        view.emit("openCodesSettings", {field: select.getAttribute("data-field-name"), value: select.value, select: select, bt: bt}) ;';
+            htmlTable += '    }) ;';
+            htmlTable += '    bt.initEmit = true ;';
+            htmlTable += ' }';
+            htmlTable += ' })(i) ;';
+            htmlTable += '}';
+            htmlTable += "</script>" ;
+            htmlTable += "</tfoot></table></div>" ;
+
+            
+
+            
+            this.view.EL.importTableContainer.innerHTML = htmlTable ;
+            var table = this.view.EL.importTableContainer.querySelector("div") ;
+            this.grid = table ;
+
+            
+            table.addEventListener("tableinit", function(){
+                if(this.view.EL.firstLineIsHeader.checked){
+                    table.setValue(this.contents.slice(1)) ;
+                }else{
+                    table.setValue(this.contents) ;
+                }
+                done() ;
+            }.bind(this)) ;
+            this.view.createField(table, "grid", 0, {}, function(err){
+                if(err){ return done(err) ;}
+            }) ;
+        }.bind(this)) ;
+    };
+
+    VeloxImporterController.prototype.onInitFooterControls = function(ev){
+        var field = this.fieldsByCode[ev.data.value] ;
+        var previousDisplay = ev.data.bt.style.display ;
+        var newDisplay = ev.data.bt.style.display ;
+        if(field && field.type === "select"){
+            newDisplay = "";
+        }else{
+            newDisplay = "none";
+        }
+        if(previousDisplay !== newDisplay){
+            ev.data.bt.style.display = newDisplay ;
+            this.grid.render() ;
+        }
+    };
+
     VeloxImporterController.prototype.onBindChange = function(ev){
         this.bindings[ev.data.field].bind = ev.data.value ;
         delete this.bindings[ev.data.field].bindCodes ;
         var field = this.fieldsByCode[ev.data.value] ;
-        if(field){
-            if(field.type === "select"){
-                this.bindings[ev.data.field].bindCodes = {} ;
-                this.showCodesPopup(ev.data.field, field, this.bindings[ev.data.field].bindCodes) ;
-            }
+        if(field && field.type === "select"){
+            this.bindings[ev.data.field].bindCodes = {} ;
+            this.onOpenCodesSettings(ev) ;
+        }
+        this.onInitFooterControls(ev) ;
+    } ;
+
+    VeloxImporterController.prototype.onOpenCodesSettings = function(ev){
+        var field = this.fieldsByCode[ev.data.value] ;
+        if(field && field.type === "select"){
+            this.showCodesPopup(ev.data.field, field, this.bindings[ev.data.field].bindCodes) ;
         }
     } ;
 
@@ -316,6 +415,7 @@
                 var select = selects[i] ;
                 bindCodes[select.getAttribute("data-val")] = select.value ;
             }
+            view.close() ;
         }.bind(this)) ;
     } ;
 
@@ -346,12 +446,20 @@
         return detectedErrors ;
     } ;
 
+    VeloxImporterController.prototype.getHeaderKey = function(header){
+        return (header.length+";;"+header.join(";")).substring(0,128) ;
+    }  ;
+
     VeloxImporterController.prototype.onStartImport = function(){
         var lines = this.grid.getValue() ;
         
         this.view.longTask(function(done){
             this.prepareDataOnEnter(null, function(err, defaultData){
                 if(err){ return done(err) ;}
+                if(!this.api || !this.api.__velox_database){
+                    return done("No Velox Database API found, provide it or implement saveRecords on your form controller") ;
+                }
+
                 var schema = VeloxWebView.fieldsSchema.getSchema();
                 schema[this.table].columns.forEach(function(col){
                     if(col.autoGen){
@@ -360,6 +468,16 @@
                 }) ;
                 defaultData = JSON.stringify(defaultData) ;
                 var recordsToSave = [] ;
+                if(this.view.EL.firstLineIsHeader.checked && schema["velox_map"]){
+                    recordsToSave.push({
+                        table: "velox_map",
+                        record: {
+                            code: "velox_importer_bindings",
+                            key: this.getHeaderKey(this.contents[0]),
+                            value: this.bindings
+                        }
+                    }) ;
+                }
                 for(var i=0; i<lines.length; i++){
                     var line = lines[i] ;
                     //initiate with default values
@@ -372,7 +490,7 @@
                             if(bind.bindCodes){
                                 val = bind.bindCodes[val] ;
                             }
-                            VeloxWebView.pathSetValue(lineToImport, bind.bind, val) ;
+                            VeloxWebView.pathSetValue(lineToImport, [bind.bind], val) ;
                         }
                     }
                     //check data
@@ -397,11 +515,13 @@
                     }
                 }
 
-                if(!this.api || !this.api.__velox_database){
-                    return done("No Velox Database API found, provide it or implement saveRecords on your form controller") ;
-                }
+                
                 this.api.__velox_database.transactionalChanges(recordsToSave, function(err, recordsSaved){
                     if(err){ return done(err); }
+
+                    this.view.EL.importTableContainer.innerHTML = "<h1>"+this.options.labels.importSuccess+"</h1>" ;
+
+                    this.view.EL.startImport.style.display = "none" ;
 
                     done() ;
                 }.bind(this))  ;
@@ -440,6 +560,29 @@
     
         reader.readAsBinaryString(file);
     } ;
+
+
+
+    VeloxImporterController.globalsOptions = {} ;
+
+    /**
+     * @typedef VeloxImporterControllerrGlobalOptions
+     * @type {object}
+     * @property {function} [decorator] Decorator to customize the view
+     */
+
+
+    /**
+     * Set global options for VeloxImporterController
+     * 
+     * @example
+     * 
+     * @param {VeloxImporterControllerGlobalOptions} globalsOptions options
+     */
+    VeloxImporterController.setOptions = function(globalsOptions){
+        VeloxImporterController.globalsOptions = globalsOptions ;
+    } ;
+
 
     return VeloxImporterController ;
 })));
