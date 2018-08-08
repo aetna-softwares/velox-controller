@@ -230,7 +230,7 @@
                 
                 if(htmlLower.indexOf("<form") === startIndex && htmlLower.lastIndexOf("</form>") === htmlLower.length-"</form>".length){
                     //just <form></form> element in the HTML, it is just the column customization
-                    formHTML= '<form id="mainForm" '+html.substring(startIndex+5) ;
+                    formHTML= '<form id="mainForm" onsubmit="return false;" '+html.substring(startIndex+5) ;
                     html = "" ;
 
                     if(formHTML.toLowerCase().indexOf("data-form-buttons") !== -1){
@@ -278,7 +278,7 @@
             }
             html = script+'$FORM_TITLE<div id="formControlButtons">$FORM_BUTTONS</div>' ;
             if(!formHTML){
-                formHTML = '<form id="mainForm" >';
+                formHTML = '<form id="mainForm" onsubmit="return false;">';
                 schema[this.table].columns.forEach(function(col){
                     if(col.name.indexOf("velox_")!==0){
                         formHTML += '<div data-field-def="'+this.table+'.'+col.name+'"></div>' ;
