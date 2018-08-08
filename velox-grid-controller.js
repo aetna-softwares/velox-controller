@@ -289,11 +289,15 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
         this.view.on("refresh", this.refresh.bind(this)) ;
     };
     VeloxGridController.prototype.prepareDataOnEnter = function(data, callback){
-        this.routeData = data ;
-        this.searchRecords(function(err, results){
+        var refreshValues = this.view.refreshValues?this.view.refreshValues.bind(this.view):function(cb){ cb() ;} ;
+        refreshValues(function(err){
             if(err){ return callback(err); }
-            callback(null, {results: results}) ;
-        }) ;
+            this.routeData = data ;
+            this.searchRecords(function(err, results){
+                if(err){ return callback(err); }
+                callback(null, {results: results}) ;
+            }) ;
+        }.bind(this)) ;
     } ;
 
     /**

@@ -230,7 +230,7 @@
                 
                 if(htmlLower.indexOf("<form") === startIndex && htmlLower.lastIndexOf("</form>") === htmlLower.length-"</form>".length){
                     //just <form></form> element in the HTML, it is just the column customization
-                    formHTML= '<form id="mainForm" onsubmit="return false;" '+html.substring(startIndex+5) ;
+                    formHTML= '<form id="mainForm" class="velox-form" onsubmit="return false;" '+html.substring(startIndex+5) ;
                     html = "" ;
 
                     if(formHTML.toLowerCase().indexOf("data-form-buttons") !== -1){
@@ -278,7 +278,7 @@
             }
             html = script+'$FORM_TITLE<div id="formControlButtons">$FORM_BUTTONS</div>' ;
             if(!formHTML){
-                formHTML = '<form id="mainForm" onsubmit="return false;">';
+                formHTML = '<form id="mainForm" class="velox-form" onsubmit="return false;">';
                 schema[this.table].columns.forEach(function(col){
                     if(col.name.indexOf("velox_")!==0){
                         formHTML += '<div data-field-def="'+this.table+'.'+col.name+'"></div>' ;
@@ -331,6 +331,11 @@
      * Apply the mode to the form (display buttons, handle readonly)
      */
     VeloxFormController.prototype.applyMode = function(mode){
+        var refreshables = this.view.elementsHavingAttribute("data-field-refreshable") ;
+        for(var i=0; i<refreshables.length; i++){
+            refreshables[i].refresh() ;
+        }
+        
         if(mode === "read"){
             this.view.EL.btCreate && this.view.EL.btCreate.style && (this.view.EL.btCreate.style.display = "");
             this.view.EL.btModify && this.view.EL.btModify.style && (this.view.EL.btModify.style.display = "");
@@ -758,19 +763,23 @@
      * called to prepare data when enter screen
      */
     VeloxFormController.prototype.prepareDataOnEnter = function(data, callback){
-        if(!data){
-            //no data given, use default data
-            this.mode = "create" ;
-            return this._getDefaultData(callback);
-        }else{
-            //get fresh data from database
-            this.mode = data.$formMode || "read" ;
-            return this.searchRecord(data, function(err, record){
-                if(err){ return callback(err); }
-                this.currentRecord = record ;
-                callback(null, record);
-            }.bind(this)) ;
-        }
+        var refreshValues = this.view.refreshValues?this.view.refreshValues.bind(this.view):function(cb){ cb() ;} ;
+        refreshValues(function(err){
+            if(err){ return callback(err); }
+            if(!data){
+                //no data given, use default data
+                this.mode = "create" ;
+                return this._getDefaultData(callback);
+            }else{
+                //get fresh data from database
+                this.mode = data.$formMode || "read" ;
+                return this.searchRecord(data, function(err, record){
+                    if(err){ return callback(err); }
+                    this.currentRecord = record ;
+                    callback(null, record);
+                }.bind(this)) ;
+            }
+        }.bind(this)) ;
     } ;
     
     VeloxFormController.prototype.initEvents = function(){
