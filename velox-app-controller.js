@@ -390,7 +390,12 @@
             dataMode = this.dataMode ;
         }
         //move to an existing route
-        var routeAddr = routeDestination.route?"#!"+routeDestination.route:"" ;
+        var routePrefix = "#!" ;
+        if(routeDestination.route[0] === "~"){
+            routePrefix = "~";//not stacking route
+            routeDestination.route = routeDestination.route.substring(1) ;
+        }
+        var routeAddr = routeDestination.route?routePrefix+routeDestination.route:"" ;
         if(routeDestination.data){
             var dataId = "" ;
             var dataStr = routeDestination.data ;
