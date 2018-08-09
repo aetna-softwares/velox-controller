@@ -174,6 +174,13 @@
             this.viewOptions.route = this.viewOptions.directory.substring(this.viewOptions.directory.lastIndexOf("/")-1)+this.viewOptions.name ;
         }
         this.data = data || {} ;
+        if(VeloxWebView.i18n){
+            VeloxWebView.i18n.onLanguageChanged(function(){
+                if(this.view && this.view.isDisplayed()){
+                    this.refresh() ;
+                }
+            }.bind(this));
+        }
     }
 
     extendsEmiter(VeloxViewController); //make it an emiter
