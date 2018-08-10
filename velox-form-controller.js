@@ -828,6 +828,10 @@
         }
         this.api.__velox_database[this.table].getPk(data, function(err, pk){
             if(err){ return callback(err) ;}
+            var joinFetch = this.joinFetch ;
+            if(joinFetch){
+                joinFetch = JSON.parse(JSON.stringify(this.joinFetch).replace(/\$pk/g, pk)) ;
+            }
             this.api.__velox_database[this.table].getByPk(pk, this.joinFetch, callback);
         }.bind(this));
     } ;
