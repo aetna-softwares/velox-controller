@@ -417,12 +417,14 @@
         this.updateRouteData(this.viewOptions.route);
     };
     VeloxFormController.prototype._onBtModify = function(){
+        this.jsonBeforeModif = JSON.stringify(this.view.getBoundObject()) ;
         this._toggleListAuto(true);
         this.setMode("modify") ;
     };
     VeloxFormController.prototype._onBtCancel = function(){
         this._toggleListAuto(false);
         if(this.currentRecord){
+            this.currentRecord = JSON.parse(this.jsonBeforeModif) ;
             this.view.render(this.currentRecord);
             this.setMode("read") ;
         }else{
@@ -474,7 +476,7 @@
             var hasError = this.joinFetch.some(function(join){
                 var thisColumn = join.thisColumn ;
                 var otherColumn = join.otherColumn;
-                if(!thisColumn || !otherColumn){
+                if(schema[join.otherTable] && (!thisColumn || !otherColumn)){
                     schema[join.otherTable].fk.some(function(fk){
                         if(fk.targetTable === this.table){
                             thisColumn = fk.targetColumn ;
@@ -601,7 +603,7 @@
 
 
     VeloxFormController.prototype.doValidate = function(done){
-        var dataBeforeModif = JSON.parse(JSON.stringify(this.view.getBoundObject())) ;
+        var dataBeforeModif = JSON.parse(this.jsonBeforeModif) ;
         var dataAfterModif = JSON.parse(JSON.stringify(dataBeforeModif)) ;
         var viewData = this.view.updateData(dataAfterModif) ;
         
