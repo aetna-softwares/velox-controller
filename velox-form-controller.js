@@ -604,8 +604,7 @@
 
     VeloxFormController.prototype.doValidate = function(done){
         var dataBeforeModif = JSON.parse(this.jsonBeforeModif) ;
-        var dataAfterModif = JSON.parse(JSON.stringify(dataBeforeModif)) ;
-        var viewData = this.view.updateData(dataAfterModif) ;
+        var viewData = this.view.updateData() ;
         
         this.view.clearFormError() ;
         this.view.checkForm(this.view.EL.mainForm, this.validations,function(err, checkOk){
@@ -834,7 +833,7 @@
             if(joinFetch){
                 joinFetch = JSON.parse(JSON.stringify(this.joinFetch).replace(/\$pk/g, pk)) ;
             }
-            this.api.__velox_database[this.table].getByPk(pk, this.joinFetch, callback);
+            this.api.__velox_database[this.table].getByPk(pk, joinFetch, callback);
         }.bind(this));
     } ;
 
