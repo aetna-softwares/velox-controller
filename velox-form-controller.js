@@ -603,7 +603,7 @@
 
 
     VeloxFormController.prototype.doValidate = function(done){
-        var dataBeforeModif = JSON.parse(this.jsonBeforeModif) ;
+        var dataBeforeModif = this.jsonBeforeModif?JSON.parse(this.jsonBeforeModif):null ;
         var viewData = this.view.updateData() ;
         
         this.view.clearFormError() ;
