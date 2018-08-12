@@ -414,6 +414,8 @@
 
 
     VeloxFormController.prototype._onBtCreate = function(){
+        this.currentRecord = null;
+        this.jsonBeforeModif = null;
         this.updateRouteData(this.viewOptions.route);
     };
     VeloxFormController.prototype._onBtModify = function(){
