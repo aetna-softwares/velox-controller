@@ -255,7 +255,7 @@
             data = null;
         }
         if(!callback){ callback = function(){} ; }
-        
+        this.enterData = data;
         this._initEvents() ;
         this.view.longTask(function(done){
             this.emit("beforeEnter", function(err){
@@ -327,7 +327,7 @@
             data = null;
         }
         if(!callback){ callback = function(){} ; }
-        
+        if(!data){ data = this.enterData ; }
         this.view.longTask(function(done){
             this.emit("beforeRefresh") ;
             this._prepareDataOnEnter(data, function(err, data){
