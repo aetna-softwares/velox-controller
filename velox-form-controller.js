@@ -230,7 +230,19 @@
                 
                 if(htmlLower.indexOf("<form") === startIndex && htmlLower.lastIndexOf("</form>") === htmlLower.length-"</form>".length){
                     //just <form></form> element in the HTML, it is just the column customization
-                    formHTML= '<form id="mainForm" class="velox-form" onsubmit="return false;" '+html.substring(startIndex+5) ;
+                    var attributes = {
+                        id : "mainForm",
+                        class : "velox-form",
+                        onsubmit : "return false;",
+                    } ;
+                    if(VeloxFormController.globalsOptions.formAttributes){
+                        Object.keys(VeloxFormController.globalsOptions.formAttributes).forEach(function(k){
+                            attributes[k] = (attributes[k]||"")+" "+VeloxFormController.globalsOptions.formAttributes[k] ;
+                        }) ;
+                    }
+                    formHTML = '<form '+Object.keys(attributes).map(function(k){
+                        return k+'="'+attributes[k]+'"' ;
+                    }).join(" ")+' '+html.substring(startIndex+5) ;
                     html = "" ;
 
                     if(formHTML.toLowerCase().indexOf("data-form-buttons") !== -1){
@@ -278,7 +290,19 @@
             }
             html = script+'$FORM_TITLE<div id="formControlButtons">$FORM_BUTTONS</div>' ;
             if(!formHTML){
-                formHTML = '<form id="mainForm" class="velox-form" onsubmit="return false;">';
+                var attributes = {
+                    id : "mainForm",
+                    class : "velox-form",
+                    onsubmit : "return false;",
+                } ;
+                if(VeloxFormController.globalsOptions.formAttributes){
+                    Object.keys(VeloxFormController.globalsOptions.formAttributes).forEach(function(k){
+                        attributes[k] = (attributes[k]||"")+" "+VeloxFormController.globalsOptions.formAttributes[k] ;
+                    }) ;
+                }
+                formHTML = '<form '+Object.keys(attributes).map(function(k){
+                    return k+'="'+attributes[k]+'"' ;
+                }).join(" ")+'>';
                 schema[this.table].columns.forEach(function(col){
                     if(col.name.indexOf("velox_")!==0){
                         formHTML += '<div data-field-def="'+this.table+'.'+col.name+'"></div>' ;
