@@ -102,7 +102,10 @@
         //
         var css = ".velox-importer-header-buttons { display: flex }";
         css += ".velox-importer-header-checkbox { margin-left: 2rem; margin-right: auto }";
+        css += ".velox-importer-container { height: 100% ; }";
+        css += ".velox-importer-grid-container { height: calc(100% - 30px); }";
         css += ".velox-importer-grid-container h1 { text-align: center; margin-top: 100px; }";
+        css += ".velox-importer-grid-container .velox-grid { height: 100% }";
 
         var head = document.getElementsByTagName('head')[0];
         var s = document.createElement('style');
@@ -132,7 +135,7 @@
         if(!html){
             //no HTML
             html = '' ;//script;
-            html += '<div>';
+            html += '<div class="velox-importer-container">';
             html += '<div id="chooseContainer" class="velox-importer-header-buttons">';
             html += '<button id="chooseFile" class="velox-importer-choose-file" type="button" data-emit>'+this.options.labels.chooseFileToImport+'</button> ';
             html += '<div class="velox-importer-header-checkbox"><input type="checkbox" id="firstLineIsHeader" data-emit/><label for="firstLineIsHeader">'+this.options.labels.firstLineContainsColumnNames+'</label></div> ';
@@ -288,7 +291,7 @@
 
             this.fieldsByCode = fieldsByCode ;
 
-            var htmlTable = '<div style="height: calc(100% - 40px)" class="velox-grid"><table cellspacing="0" data-responsive="false" data-no-toolbar data-no-search>' ;
+            var htmlTable = '<div class="velox-grid"><table cellspacing="0" data-responsive="false" data-no-toolbar data-no-search>' ;
             htmlTable += "<thead><tr>"+this.contents[0].map(function(c, i){ return '<th data-field-name="'+i+'">'+this.getColumnName(c, i)+"</th>" ;}.bind(this)).join("")+"</tr></thead>" ;
             htmlTable += "<tfoot>"+
             "<tr>"+this.contents[0].map(function(c, i){ 
