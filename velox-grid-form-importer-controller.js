@@ -11,6 +11,10 @@
 }(this, (function (VeloxGridAndFormController, VeloxImporterController) { 'use strict';
     var VeloxGridFormAndImporterController = function(table, options){
 
+        if(options.grid && options.grid.canImport === undefined){
+            options.grid.canImport = true ;
+        }
+
         VeloxGridAndFormController.call(this, table, options) ;
         
         if(!this.options.importer){ this.options.importer = {}; }
@@ -18,12 +22,14 @@
         if(!this.options.importer.route){
             this.options.importer.route = table+"/importer" ;
         }
-        if(!this.options.importer.openInPopup === undefined){
+        if(this.options.importer.openInPopup === undefined){
             this.options.importer.openInPopup = true ;
+            this.options.importer.popup = {
+                size: "wide"
+            } ;
         }
-
         var importerOptions = this.options.importer ;
-        this.options.importer = this.options.form ;
+        this.options.importer = JSON.parse(JSON.stringify(this.options.form)) ;
         Object.keys(importerOptions).forEach(function(k){
             this.options.importer[k] = importerOptions[k] ;
         }.bind(this)) ;
@@ -56,7 +62,10 @@
     } ;
 
     VeloxGridFormAndImporterController.prototype._onImport = function(){
-        this.navigate( this.importerRoute, null) ;
+        this.navigate("~"+this.importerRoute, null) ;
+        this.importerController.view.on("close", function(){
+            this.gridController.refresh() ;
+        }.bind(this)) ;
     } ;
 
     return VeloxGridFormAndImporterController ;
