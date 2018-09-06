@@ -268,7 +268,9 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
         }.bind(this)) ;
         this.view.on("initDone", function(){
             this.view.EL[this.table+"Grid"].addEventListener("rowClick", function(ev){
-                this.view.emit("rowClick", ev.rowData) ;
+                if(ev.rowData){
+                    this.view.emit("rowClick", ev.rowData) ;
+                }
             }.bind(this)) ;
             // if(this.view.EL[this.table+"Grid"] && this.view.EL[this.table+"Grid"].toolbar){
             //     this.view.EL[this.table+"Grid"].toolbar.on('click', function(event) {
