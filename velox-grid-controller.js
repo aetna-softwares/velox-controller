@@ -180,6 +180,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
                         var thToolbar = document.createElement("th") ;
                         trToolbar.appendChild(thToolbar) ;
                         thToolbar.innerHTML = VeloxWebView.tr?VeloxWebView.tr("form.refresh"):"Refresh";
+                        thToolbar.title = VeloxWebView.tr?VeloxWebView.tr("form.refresh"):"Refresh";
                         thToolbar.id = "refresh";
                     }
                     if(this.viewOptions.canImport){
@@ -190,6 +191,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
                         var thToolbar = document.createElement("th") ;
                         trToolbar.appendChild(thToolbar) ;
                         thToolbar.innerHTML = VeloxWebView.tr?VeloxWebView.tr("form.import"):"Import";
+                        thToolbar.title = VeloxWebView.tr?VeloxWebView.tr("form.import"):"Import";
                         thToolbar.id = "import";
                     }
                     if(this.viewOptions.canCreate){
@@ -199,6 +201,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
                         var thToolbar = document.createElement("th") ;
                         trToolbar.appendChild(thToolbar) ;
                         thToolbar.innerHTML = VeloxWebView.tr?VeloxWebView.tr("form.create"):"New";
+                        thToolbar.title = VeloxWebView.tr?VeloxWebView.tr("form.create"):"New";
                         thToolbar.id = "createNew";
                     }
                     if(this.viewOptions.filters){
