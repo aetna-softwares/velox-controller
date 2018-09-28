@@ -24,6 +24,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
         }
 
         this.joinFetch = options.joinFetch ;    
+        this.searchOptions = options.searchRecords || {} ;    
             
         VeloxViewController.call(this,options, null) ;
 
@@ -332,7 +333,7 @@ if (typeof exports === 'object' && typeof module !== 'undefined') {
      * @return {object} the search to do on table
      */
     VeloxGridController.prototype.createSearch = function(){
-        var search = {} ;
+        var search = this.searchOptions ;
         var activeFilters = this.view.getFilters() ;
         activeFilters.forEach(function(f){
             if(search[f.searchField]){
