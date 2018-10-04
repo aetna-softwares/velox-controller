@@ -691,13 +691,13 @@
                 return previousTopRoutesName.indexOf(newRoute.route) !== -1 //was in previous TOP routes
                     && newTopRoutesName.indexOf(newRoute.route) === -1 ; //but not in new TOP routes
             }) ;
-
-        }else{
-            //no previous, it may be because the user just paste the whole url in, all new route except the new TOP routes are stacked
-            stackedRoutes = newRoutes.filter(function(newRoute){ 
-                return newTopRoutesName.indexOf(newRoute.route) === -1 ; //but not in new TOP routes
-            });
         }
+        //the user may paste the whole url in, add route that was not in prevous and are not in the new TOP routes
+        stackedRoutes = stackedRoutes.concat(newRoutes.filter(function(newRoute){ 
+            return previousRoutes.indexOf(newRoute.route) === -1 && //not in previous route (because either already stacked or alredy in stacked)
+                newTopRoutesName.indexOf(newRoute.route) === -1 && //not on the top
+                stackedRoutes.indexOf(newRoute.route) === -1; //not already in stacked routes
+        }));
 
         //check which route is in previous but not in the top and is at the top in new
         var unstackedRoutes = [] ;
