@@ -471,16 +471,6 @@
                 }) ;
                 defaultData = JSON.stringify(defaultData) ;
                 var recordsToSave = [] ;
-                if(this.view.EL.firstLineIsHeader.checked && schema["velox_map"]){
-                    recordsToSave.push({
-                        table: "velox_map",
-                        record: {
-                            code: "velox_importer_bindings",
-                            key: this.getHeaderKey(this.contents[0]),
-                            value: this.bindings
-                        }
-                    }) ;
-                }
                 for(var i=0; i<lines.length; i++){
                     var line = lines[i] ;
                     //initiate with default values
@@ -493,7 +483,7 @@
                             if(bind.bindCodes){
                                 val = bind.bindCodes[val] ;
                             }
-                            VeloxWebView.pathSetValue(lineToImport, [bind.bind], val) ;
+                            VeloxWebView.pathSetValue(lineToImport, bind.bind.split("."), val) ;
                         }
                     }
                     //check data
@@ -518,16 +508,41 @@
                     }
                 }
 
+                var addBindings = function(cb){
+                    if(this.view.EL.firstLineIsHeader.checked && schema["velox_map"]){
+                        this.api.__velox_database.velox_map.searchFirst({code: "velox_importer_bindings", key: this.getHeaderKey(this.contents[0])}, function(err, mapBindings){
+                            if(err){ return cb(err) ;}
+                            var record = mapBindings || {
+                                code: "velox_importer_bindings",
+                                key: this.getHeaderKey(this.contents[0]),
+                                value: this.bindings
+                            } ;
+                            recordsToSave.push({
+                                table: "velox_map",
+                                action: mapBindings?"update":"insert",
+                                record: record
+                            }) ;
+                            cb() ;
+                        }.bind(this)) ;
+                    }else{
+                        cb() ;
+                    }
+                }.bind(this) ;
                 
-                this.api.__velox_database.transactionalChanges(recordsToSave, function(err, recordsSaved){
+                addBindings(function(err){
                     if(err){ return done(err); }
 
-                    this.view.EL.importTableContainer.innerHTML = "<h1>"+this.options.labels.importSuccess+"</h1>" ;
+                    this.api.__velox_database.transactionalChanges(recordsToSave, function(err, recordsSaved){
+                        if(err){ return done(err); }
+    
+                        this.view.EL.importTableContainer.innerHTML = "<h1>"+this.options.labels.importSuccess+"</h1>" ;
+    
+                        this.view.EL.startImport.style.display = "none" ;
+    
+                        done() ;
+                    }.bind(this))  ;
+                }.bind(this)) ;
 
-                    this.view.EL.startImport.style.display = "none" ;
-
-                    done() ;
-                }.bind(this))  ;
             }.bind(this))  ;
         }.bind(this))  ;
     } ;
