@@ -496,6 +496,7 @@
                     }
 
                     var callbackDone = false;
+                    this.mode = "create" ;
                     this.getRecordsToSave(lineToImport, null, function(err, records){
                         if(err){ return done(err) ;}
                         for(var a=0; a<records.length; a++){
