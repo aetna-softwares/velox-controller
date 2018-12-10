@@ -515,8 +515,8 @@
                             var record = mapBindings || {
                                 code: "velox_importer_bindings",
                                 key: this.getHeaderKey(this.contents[0]),
-                                value: this.bindings
                             } ;
+                            record.value = this.bindings ;
                             recordsToSave.push({
                                 table: "velox_map",
                                 action: mapBindings?"update":"insert",
