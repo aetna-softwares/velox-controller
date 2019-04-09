@@ -558,7 +558,7 @@
      * @param {string} destination the destination
      */
     VeloxAppController.prototype._getRoutes = function(destination){
-        if(!destination){ return [] ;}
+        if(destination === undefined || destination === null){ return [] ;}
         var destinationRoutes = destination.split("#") ;
         if(destination.indexOf("#$") === 0 || destination.indexOf("#~") === 0){
             //special case when destination is #$data, split will give "", "$data" 
